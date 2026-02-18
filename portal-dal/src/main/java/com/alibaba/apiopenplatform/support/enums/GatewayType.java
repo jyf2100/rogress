@@ -51,6 +51,11 @@ public enum GatewayType {
      */
     HIGRESS("Higress"),
 
+    /**
+     * Apache APISIX
+     */
+    APISIX("APISIX"),
+
     ;
 
     private final String type;
@@ -73,5 +78,9 @@ public enum GatewayType {
 
     public boolean isApsaraGateway() {
         return this == APSARA_GATEWAY;
+    }
+
+    public boolean isApisix() {
+        return this == APISIX;
     }
 }

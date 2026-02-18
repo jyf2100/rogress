@@ -17,31 +17,21 @@
  * under the License.
  */
 
-package com.alibaba.apiopenplatform.support.gateway;
+package com.alibaba.apiopenplatform.converter;
 
-import com.alibaba.apiopenplatform.entity.Gateway;
-import com.alibaba.apiopenplatform.support.enums.GatewayType;
-import lombok.Builder;
-import lombok.Data;
+import com.alibaba.apiopenplatform.support.gateway.ApisixConfig;
 
-@Data
-@Builder
-public class GatewayConfig {
+import jakarta.persistence.Converter;
 
-    private GatewayType gatewayType;
+/**
+ * APISIX 配置 JPA 转换器
+ *
+ * 用于在 ApisixConfig 对象和 JSON 字符串之间进行转换
+ */
+@Converter(autoApply = true)
+public class ApisixConfigConverter extends JsonConverter<ApisixConfig> {
 
-    private APIGConfig apigConfig;
-
-    private AdpAIGatewayConfig adpAIGatewayConfig;
-
-    private ApsaraGatewayConfig apsaraGatewayConfig;
-
-    private HigressConfig higressConfig;
-
-    private ApisixConfig apisixConfig;
-
-    /**
-     * 网关实体引用，用于获取gatewayId等信息
-     */
-    private Gateway gateway;
+    protected ApisixConfigConverter() {
+        super(ApisixConfig.class);
+    }
 }

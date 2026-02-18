@@ -19,29 +19,43 @@
 
 package com.alibaba.apiopenplatform.support.gateway;
 
-import com.alibaba.apiopenplatform.entity.Gateway;
-import com.alibaba.apiopenplatform.support.enums.GatewayType;
-import lombok.Builder;
+import com.alibaba.apiopenplatform.support.common.Encrypted;
 import lombok.Data;
 
+/**
+ * APISIX 网关配置
+ *
+ * 用于连接 APISIX Admin API 的配置信息
+ */
 @Data
-@Builder
-public class GatewayConfig {
-
-    private GatewayType gatewayType;
-
-    private APIGConfig apigConfig;
-
-    private AdpAIGatewayConfig adpAIGatewayConfig;
-
-    private ApsaraGatewayConfig apsaraGatewayConfig;
-
-    private HigressConfig higressConfig;
-
-    private ApisixConfig apisixConfig;
+public class ApisixConfig {
 
     /**
-     * 网关实体引用，用于获取gatewayId等信息
+     * APISIX Admin API 端点地址
+     * 例如: http://localhost:9180
      */
-    private Gateway gateway;
+    private String adminApiEndpoint;
+
+    /**
+     * APISIX Admin API Key
+     * 用于认证 Admin API 请求
+     */
+    @Encrypted
+    private String adminApiKey;
+
+    /**
+     * 请求超时时间（毫秒）
+     * 默认 30000ms (30秒)
+     */
+    private Integer timeout = 30000;
+
+    /**
+     * 构建唯一标识键
+     * 用于缓存和去重
+     *
+     * @return 唯一标识字符串
+     */
+    public String buildUniqueKey() {
+        return String.format("%s:%s", adminApiEndpoint, adminApiKey);
+    }
 }

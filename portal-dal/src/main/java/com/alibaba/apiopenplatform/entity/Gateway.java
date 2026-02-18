@@ -23,11 +23,13 @@ import com.alibaba.apiopenplatform.converter.APIGConfigConverter;
 import com.alibaba.apiopenplatform.converter.AdpAIGatewayConfigConverter;
 import com.alibaba.apiopenplatform.converter.HigressConfigConverter;
 import com.alibaba.apiopenplatform.converter.ApsaraGatewayConfigConverter;
+import com.alibaba.apiopenplatform.converter.ApisixConfigConverter;
 import com.alibaba.apiopenplatform.support.enums.GatewayType;
 import com.alibaba.apiopenplatform.support.gateway.APIGConfig;
 import com.alibaba.apiopenplatform.support.gateway.AdpAIGatewayConfig;
 import com.alibaba.apiopenplatform.support.gateway.HigressConfig;
 import com.alibaba.apiopenplatform.support.gateway.ApsaraGatewayConfig;
+import com.alibaba.apiopenplatform.support.gateway.ApisixConfig;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -74,4 +76,8 @@ public class Gateway extends BaseEntity {
     @Convert(converter = ApsaraGatewayConfigConverter.class)
     @Column(name = "apsara_gateway_config", columnDefinition = "json")
     private ApsaraGatewayConfig apsaraGatewayConfig;
+
+    @Convert(converter = ApisixConfigConverter.class)
+    @Column(name = "apisix_config", columnDefinition = "json")
+    private ApisixConfig apisixConfig;
 }
