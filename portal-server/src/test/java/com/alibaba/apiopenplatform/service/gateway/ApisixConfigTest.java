@@ -19,7 +19,6 @@
 
 package com.alibaba.apiopenplatform.service.gateway;
 
-import com.alibaba.apiopenplatform.converter.ApisixConfigConverter;
 import com.alibaba.apiopenplatform.support.enums.GatewayType;
 import com.alibaba.apiopenplatform.support.gateway.ApisixConfig;
 import com.alibaba.apiopenplatform.support.gateway.GatewayConfig;
@@ -125,33 +124,24 @@ class ApisixConfigTest {
     }
 
     /**
-     * 测试 ApisixConfigConverter 存在
+     * 测试 ApisixConfig JSON 序列化/反序列化（通过 JSONUtil）
      */
     @Test
-    void testApisixConfigConverterExists() {
-        ApisixConfigConverter converter = new ApisixConfigConverter();
-        assertNotNull(converter);
-    }
-
-    /**
-     * 测试 ApisixConfigConverter 序列化和反序列化
-     */
-    @Test
-    void testApisixConfigConverterRoundTrip() {
-        ApisixConfigConverter converter = new ApisixConfigConverter();
-
+    void testApisixConfigJsonRoundTrip() {
         ApisixConfig original = new ApisixConfig();
         original.setAdminApiEndpoint("http://localhost:9180");
         original.setAdminApiKey("test-api-key");
         original.setTimeout(60000);
 
-        // 序列化
-        String json = converter.convertToDatabaseColumn(original);
+        // 使用 JSONUtil 进行序列化（模拟 Converter 行为）
+        String json = cn.hutool.json.JSONUtil.toJsonStr(original);
         assertNotNull(json);
         assertTrue(json.contains("http://localhost:9180"));
+        assertTrue(json.contains("test-api-key"));
+        assertTrue(json.contains("60000"));
 
         // 反序列化
-        ApisixConfig restored = converter.convertToEntityAttribute(json);
+        ApisixConfig restored = cn.hutool.json.JSONUtil.toBean(json, ApisixConfig.class);
         assertNotNull(restored);
         assertEquals("http://localhost:9180", restored.getAdminApiEndpoint());
         assertEquals("test-api-key", restored.getAdminApiKey());

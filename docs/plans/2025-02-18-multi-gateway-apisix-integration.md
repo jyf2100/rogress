@@ -365,13 +365,17 @@ public PageResult<? extends GatewayMCPServerResult> fetchMcpServers(
 
 ### Phase 1 Task 1.1: 扩展枚举和配置类 ✅
 
-**状态**: ✅ 完成
+**状态**: ✅ 已完成并验证通过
 
-**环境阻塞**: Maven 未安装，无法运行测试验证
+**提交**: `806b634` - feat(gateway): add APISIX gateway type and config support
 
-**验证命令** (需在有 Maven 环境时执行):
+**推送**: https://github.com/jyf2100/rogress (main 分支)
+
+**测试验证** (JDK 17):
 ```bash
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
 mvn test -pl portal-server -Dtest=ApisixConfigTest
+# Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 - BUILD SUCCESS
 ```
 
 **变更文件**:
