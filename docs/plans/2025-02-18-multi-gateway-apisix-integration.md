@@ -423,11 +423,28 @@ mvn test -pl portal-server -Dtest=ApisixClientTest
 - `buildUrl(String path)` - 构建完整 API URL
 - `buildHeaders()` - 构建带 X-API-KEY 的请求头
 
-#### Task 1.2.3: ApisixClient execute 方法
+#### Task 1.2.3: ApisixClient execute 方法 ✅
+
+**状态**: ✅ 已完成
+
+**测试验证**:
+```bash
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
+mvn test -pl portal-server -Dtest=ApisixClientTest
+# Tests run: 13, Failures: 0, Errors: 0, Skipped: 0 - BUILD SUCCESS
+```
+
+**新增方法**:
+- `execute(path, method, queryParams, body, responseType)` - 执行 HTTP 请求
+- `buildUrl(path, queryParams)` - 构建带查询参数的 URL
+
+---
+
+### Phase 1 Task 1.3: 实现 ApisixOperator
 
 **状态**: ⏳ 待开始
 
 **Files**:
-- Modify: `portal-server/.../gateway/client/ApisixClient.java`
-- Modify: `portal-server/src/test/.../ApisixClientTest.java`
+- Create: `portal-server/.../gateway/ApisixOperator.java`
+- Test: `portal-server/src/test/.../ApisixOperatorTest.java`
 
