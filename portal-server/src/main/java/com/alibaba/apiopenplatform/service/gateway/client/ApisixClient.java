@@ -21,6 +21,8 @@ package com.alibaba.apiopenplatform.service.gateway.client;
 
 import com.alibaba.apiopenplatform.support.gateway.ApisixConfig;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 /**
  * APISIX Admin API 客户端
@@ -30,10 +32,46 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ApisixClient extends GatewayClient {
 
+    private static final String ADMIN_API_PREFIX = "/apisix/admin";
+
     private final ApisixConfig config;
 
     public ApisixClient(ApisixConfig config) {
         this.config = config;
+    }
+
+    /**
+     * 构建完整的 API URL
+     *
+     * @param path API 路径（如 /routes 或 routes）
+     * @return 完整的 URL
+     */
+    public String buildUrl(String path) {
+        String baseUrl = config.getAdminApiEndpoint();
+
+        // 移除尾部斜杠
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+
+        // 确保路径以斜杠开头
+        if (!path.startsWith("/")) {
+            path = "/" + path;
+        }
+
+        return baseUrl + ADMIN_API_PREFIX + path;
+    }
+
+    /**
+     * 构建请求头，包含认证信息
+     *
+     * @return 包含 X-API-KEY 的请求头
+     */
+    public HttpHeaders buildHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-API-KEY", config.getAdminApiKey());
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return headers;
     }
 
     @Override
