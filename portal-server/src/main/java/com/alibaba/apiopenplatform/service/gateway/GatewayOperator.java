@@ -30,6 +30,7 @@ import com.alibaba.apiopenplatform.dto.result.model.AIGWModelAPIResult;
 import com.alibaba.apiopenplatform.dto.result.model.GatewayModelAPIResult;
 import com.alibaba.apiopenplatform.entity.*;
 import com.alibaba.apiopenplatform.service.gateway.client.APIGClient;
+import com.alibaba.apiopenplatform.service.gateway.client.ApisixClient;
 import com.alibaba.apiopenplatform.service.gateway.client.GatewayClient;
 import com.alibaba.apiopenplatform.service.gateway.client.HigressClient;
 import com.alibaba.apiopenplatform.service.gateway.client.ApsaraStackGatewayClient;
@@ -97,12 +98,29 @@ public abstract class GatewayOperator<T> {
 
     @SuppressWarnings("unchecked")
     protected T getClient(Gateway gateway) {
-        String clientKey = gateway.getGatewayType().isAPIG() ?
-                gateway.getApigConfig().buildUniqueKey() : gateway.getHigressConfig().buildUniqueKey();
+        String clientKey = buildClientKey(gateway);
         return (T) clientCache.computeIfAbsent(
                 clientKey,
                 key -> createClient(gateway)
         );
+    }
+
+    /**
+     * Build a unique client key for the given gateway.
+     */
+    private String buildClientKey(Gateway gateway) {
+        GatewayType type = gateway.getGatewayType();
+        if (type.isAPIG()) {
+            return gateway.getApigConfig().buildUniqueKey();
+        } else if (type.isHigress()) {
+            return gateway.getHigressConfig().buildUniqueKey();
+        } else if (type.isApisix()) {
+            return gateway.getApisixConfig().buildUniqueKey();
+        } else if (type.isApsaraGateway()) {
+            return gateway.getApsaraGatewayConfig().buildUniqueKey();
+        } else {
+            return gateway.getGatewayId();
+        }
     }
 
     /**
@@ -118,6 +136,8 @@ public abstract class GatewayOperator<T> {
                         gateway.getApsaraGatewayConfig());
             case HIGRESS:
                 return new HigressClient(gateway.getHigressConfig());
+            case APISIX:
+                return new ApisixClient(gateway.getApisixConfig());
             default:
                 throw new BusinessException(ErrorCode.INTERNAL_ERROR,
                         "No factory found for gateway type: " + gateway.getGatewayType());

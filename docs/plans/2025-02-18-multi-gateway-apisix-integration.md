@@ -442,9 +442,31 @@ mvn test -pl portal-server -Dtest=ApisixClientTest
 
 ### Phase 1 Task 1.3: 实现 ApisixOperator
 
-**状态**: ⏳ 待开始
+**状态**: ✅ 已完成
 
-**Files**:
+**测试验证**:
+```bash
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
+mvn test -pl portal-server -Dtest="Apisix*Test"
+# Tests run: 32, Failures: 0, Errors: 0, Skipped: 0 - BUILD SUCCESS
+```
+
+**变更文件**:
 - Create: `portal-server/.../gateway/ApisixOperator.java`
-- Test: `portal-server/src/test/.../ApisixOperatorTest.java`
+- Create: `portal-server/src/test/.../ApisixOperatorTest.java`
+- Modify: `portal-server/.../gateway/GatewayOperator.java` (添加 APISIX 支持)
+
+**实现内容**:
+- ApisixOperator 继承 GatewayOperator<ApisixClient>
+- 使用 @Service 注解支持 Spring 自动发现
+- getGatewayType() 返回 GatewayType.APISIX
+- 初期方法抛出 UnsupportedOperationException（待 Phase 2/3 实现）
+- GatewayOperator.createClient() 添加 APISIX case
+- GatewayOperator.buildClientKey() 支持 APISIX 配置
+
+---
+
+### Phase 2 Task 2.1: 实现 mcp-bridge 配置
+
+**状态**: ⏳ 待开始
 
