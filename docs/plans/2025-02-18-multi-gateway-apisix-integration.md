@@ -391,15 +391,28 @@ mvn test -pl portal-server -Dtest=ApisixConfigTest
 
 ### Phase 1 Task 1.2: 实现 ApisixClient
 
+**状态**: 🔄 进行中
+
+#### Task 1.2.1: ApisixClient 基础结构 ✅
+
+**状态**: ✅ 已完成
+
+**测试验证**:
+```bash
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
+mvn test -pl portal-server -Dtest=ApisixClientTest
+# Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 - BUILD SUCCESS
+```
+
+**变更文件**:
+- Create: `portal-server/.../gateway/client/ApisixClient.java`
+- Create: `portal-server/src/test/.../ApisixClientTest.java`
+
+#### Task 1.2.2: ApisixClient HTTP 请求能力
+
 **状态**: ⏳ 待开始
 
 **Files**:
-- Create: `portal-server/.../gateway/client/ApisixClient.java`
-- Test: `portal-server/src/test/.../ApisixClientTest.java`
-- Create: `portal-dal/src/main/java/com/alibaba/apiopenplatform/support/gateway/ApisixConfig.java`
-- Modify: `portal-dal/src/main/java/com/alibaba/apiopenplatform/support/enums/GatewayType.java`
-- Modify: `portal-dal/src/main/java/com/alibaba/apiopenplatform/support/gateway/GatewayConfig.java`
-- Modify: `portal-dal/src/main/java/com/alibaba/apiopenplatform/entity/Gateway.java`
-- Create: `portal-dal/src/main/java/com/alibaba/apiopenplatform/support/gateway/ApisixConfigConverter.java`
-- Test: `portal-server/src/test/java/com/alibaba/apiopenplatform/service/gateway/ApisixConfigTest.java`
+- Modify: `portal-server/.../gateway/client/ApisixClient.java`
+- Modify: `portal-server/src/test/.../ApisixClientTest.java`
 
