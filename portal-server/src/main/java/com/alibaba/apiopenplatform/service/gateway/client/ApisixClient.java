@@ -20,6 +20,7 @@
 package com.alibaba.apiopenplatform.service.gateway.client;
 
 import com.alibaba.apiopenplatform.service.gateway.factory.HTTPClientFactory;
+import com.alibaba.apiopenplatform.service.gateway.model.ApisixConsumer;
 import com.alibaba.apiopenplatform.service.gateway.model.ApisixRoute;
 import com.alibaba.apiopenplatform.support.gateway.ApisixConfig;
 import lombok.Data;
@@ -295,6 +296,139 @@ public class ApisixClient extends GatewayClient {
         );
     }
 
+    // ==================== Consumer 管理 API ====================
+
+    /**
+     * 获取所有消费者列表
+     *
+     * @return 消费者列表
+     */
+    public List<ApisixConsumer> listConsumers() {
+        ApisixListResponse<ApisixConsumerData> response = execute(
+                "/consumers",
+                HttpMethod.GET,
+                null,
+                null,
+                new ParameterizedTypeReference<ApisixListResponse<ApisixConsumerData>>() {}
+        );
+
+        if (response == null || response.getList() == null) {
+            return new ArrayList<>();
+        }
+
+        return response.getList().getNodes().stream()
+                .map(node -> {
+                    ApisixConsumer consumer = convertToConsumer(node.getValue());
+                    consumer.setUsername(extractIdFromKey(node.getKey()));
+                    return consumer;
+                })
+                .toList();
+    }
+
+    /**
+     * 获取单个消费者详情
+     *
+     * @param username 消费者用户名
+     * @return 消费者详情
+     */
+    public ApisixConsumer getConsumer(String username) {
+        ApisixResponse<ApisixConsumer> response = execute(
+                "/consumers/" + username,
+                HttpMethod.GET,
+                null,
+                null,
+                new ParameterizedTypeReference<ApisixResponse<ApisixConsumer>>() {}
+        );
+
+        if (response == null) {
+            return null;
+        }
+
+        ApisixConsumer consumer = response.getValue();
+        if (consumer != null) {
+            consumer.setUsername(username);
+        }
+        return consumer;
+    }
+
+    /**
+     * 创建消费者
+     *
+     * @param username 消费者用户名
+     * @param consumer 消费者配置
+     * @return 创建的消费者
+     */
+    public ApisixConsumer createConsumer(String username, ApisixConsumer consumer) {
+        execute(
+                "/consumers/" + username,
+                HttpMethod.PUT,
+                null,
+                consumer,
+                Void.class
+        );
+        return getConsumer(username);
+    }
+
+    /**
+     * 更新消费者
+     *
+     * @param username 消费者用户名
+     * @param consumer 消费者配置
+     * @return 更新后的消费者
+     */
+    public ApisixConsumer updateConsumer(String username, ApisixConsumer consumer) {
+        execute(
+                "/consumers/" + username,
+                HttpMethod.PUT,
+                null,
+                consumer,
+                Void.class
+        );
+        return getConsumer(username);
+    }
+
+    /**
+     * 删除消费者
+     *
+     * @param username 消费者用户名
+     */
+    public void deleteConsumer(String username) {
+        execute(
+                "/consumers/" + username,
+                HttpMethod.DELETE,
+                null,
+                null,
+                Void.class
+        );
+    }
+
+    /**
+     * 检查消费者是否存在
+     *
+     * @param username 消费者用户名
+     * @return 是否存在
+     */
+    public boolean consumerExists(String username) {
+        try {
+            ApisixConsumer consumer = getConsumer(username);
+            return consumer != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * 将 ApisixConsumerData 转换为 ApisixConsumer
+     */
+    private ApisixConsumer convertToConsumer(ApisixConsumerData data) {
+        ApisixConsumer consumer = new ApisixConsumer();
+        consumer.setUsername(data.getUsername());
+        consumer.setPlugins(data.getPlugins());
+        consumer.setDesc(data.getDesc());
+        consumer.setLabels(data.getLabels());
+        return consumer;
+    }
+
     // ==================== 辅助方法 ====================
 
     /**
@@ -357,5 +491,16 @@ public class ApisixClient extends GatewayClient {
         private Map<String, Object> plugins;
         private Map<String, Object> upstream;
         private Boolean status;
+    }
+
+    /**
+     * 消费者数据（用于列表响应）
+     */
+    @Data
+    public static class ApisixConsumerData {
+        private String username;
+        private Map<String, Object> plugins;
+        private String desc;
+        private Map<String, String> labels;
     }
 }

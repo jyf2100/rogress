@@ -33,9 +33,11 @@ import com.alibaba.apiopenplatform.entity.Consumer;
 import com.alibaba.apiopenplatform.entity.ConsumerCredential;
 import com.alibaba.apiopenplatform.entity.Gateway;
 import com.alibaba.apiopenplatform.service.gateway.client.ApisixClient;
+import com.alibaba.apiopenplatform.service.gateway.model.ApisixConsumer;
 import com.alibaba.apiopenplatform.service.gateway.model.ApisixRoute;
 import com.alibaba.apiopenplatform.support.consumer.ConsumerAuthConfig;
 import com.alibaba.apiopenplatform.support.enums.GatewayType;
+import com.alibaba.apiopenplatform.support.gateway.ApisixConfig;
 import com.alibaba.apiopenplatform.support.gateway.GatewayConfig;
 import com.alibaba.apiopenplatform.support.product.ApisixRefConfig;
 import com.aliyun.sdk.service.apig20240327.models.HttpApiApiInfo;
@@ -174,26 +176,69 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
 
     @Override
     public String createConsumer(Consumer consumer, ConsumerCredential credential, GatewayConfig config) {
-        // TODO: Phase 3 - 实现 APISIX Consumer 创建
-        throw new UnsupportedOperationException("APISIX consumer creation not implemented yet");
+        ApisixConfig apisixConfig = config.getApisixConfig();
+        ApisixClient client = new ApisixClient(apisixConfig);
+
+        String consumerId = consumer.getConsumerId();
+        String apiKey = extractApiKey(credential);
+
+        ApisixConsumer apisixConsumer = buildApisixConsumer(consumerId, apiKey);
+        client.createConsumer(consumerId, apisixConsumer);
+
+        return consumerId;
     }
 
     @Override
     public void updateConsumer(String consumerId, ConsumerCredential credential, GatewayConfig config) {
-        // TODO: Phase 3 - 实现 APISIX Consumer 更新
-        throw new UnsupportedOperationException("APISIX consumer update not implemented yet");
+        ApisixConfig apisixConfig = config.getApisixConfig();
+        ApisixClient client = new ApisixClient(apisixConfig);
+
+        String apiKey = extractApiKey(credential);
+        ApisixConsumer apisixConsumer = buildApisixConsumer(consumerId, apiKey);
+        client.updateConsumer(consumerId, apisixConsumer);
     }
 
     @Override
     public void deleteConsumer(String consumerId, GatewayConfig config) {
-        // TODO: Phase 3 - 实现 APISIX Consumer 删除
-        throw new UnsupportedOperationException("APISIX consumer deletion not implemented yet");
+        ApisixConfig apisixConfig = config.getApisixConfig();
+        ApisixClient client = new ApisixClient(apisixConfig);
+        client.deleteConsumer(consumerId);
     }
 
     @Override
     public boolean isConsumerExists(String consumerId, GatewayConfig config) {
-        // TODO: Phase 3 - 实现 APISIX Consumer 存在性检查
-        return false;
+        ApisixConfig apisixConfig = config.getApisixConfig();
+        ApisixClient client = new ApisixClient(apisixConfig);
+        return client.consumerExists(consumerId);
+    }
+
+    /**
+     * 从 ConsumerCredential 中提取 API Key
+     */
+    private String extractApiKey(ConsumerCredential credential) {
+        if (credential == null || credential.getApiKeyConfig() == null) {
+            throw new IllegalArgumentException("API Key credential is required");
+        }
+
+        var apiKeyConfig = credential.getApiKeyConfig();
+        var credentials = apiKeyConfig.getCredentials();
+        if (credentials == null || credentials.isEmpty()) {
+            throw new IllegalArgumentException("API Key is required");
+        }
+
+        return credentials.get(0).getApiKey();
+    }
+
+    /**
+     * 构建 APISIX Consumer 配置
+     */
+    private ApisixConsumer buildApisixConsumer(String consumerId, String apiKey) {
+        ApisixConsumer consumer = new ApisixConsumer();
+        consumer.setUsername(consumerId);
+        consumer.setPlugins(Map.of(
+                "key-auth", Map.of("key", apiKey)
+        ));
+        return consumer;
     }
 
     @Override

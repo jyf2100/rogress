@@ -517,5 +517,30 @@ mvn test -pl portal-server -Dtest="Apisix*Test"
 
 ### Phase 2 Task 2.3: Consumer 管理
 
+**状态**: ✅ 已完成
+
+**测试验证**:
+```bash
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
+mvn test -pl portal-server -Dtest="Apisix*Test"
+# Tests run: 54, Failures: 0, Errors: 0, Skipped: 0 - BUILD SUCCESS
+```
+
+**变更文件**:
+- Create: `portal-server/.../gateway/model/ApisixConsumer.java`
+- Create: `portal-server/src/test/.../ApisixConsumerTest.java`
+- Modify: `portal-server/.../gateway/client/ApisixClient.java` (添加 Consumer API)
+- Modify: `portal-server/.../gateway/ApisixOperator.java` (实现 Consumer CRUD)
+
+**实现内容**:
+- ApisixConsumer 模型类（username, plugins, desc, labels）
+- ApisixClient 添加 listConsumers/getConsumer/createConsumer/updateConsumer/deleteConsumer/consumerExists 方法
+- ApisixOperator 实现 createConsumer/updateConsumer/deleteConsumer/isConsumerExists 方法
+- 使用 key-auth 插件进行 API Key 认证
+
+---
+
+### Phase 3: 完善与测试
+
 **状态**: ⏳ 待开始
 
