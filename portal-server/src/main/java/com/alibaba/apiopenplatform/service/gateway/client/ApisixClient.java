@@ -354,13 +354,19 @@ public class ApisixClient extends GatewayClient {
     /**
      * 创建消费者
      *
+     * 注意：根据 APISIX 官方文档，创建 Consumer 使用 PUT /apisix/admin/consumers
+     * username 字段在请求体中，而不是在 URL 路径中
+     *
      * @param username 消费者用户名
      * @param consumer 消费者配置
      * @return 创建的消费者
      */
     public ApisixConsumer createConsumer(String username, ApisixConsumer consumer) {
+        // 确保 consumer 对象包含 username
+        consumer.setUsername(username);
+
         execute(
-                "/consumers/" + username,
+                "/consumers",
                 HttpMethod.PUT,
                 null,
                 consumer,
@@ -372,13 +378,19 @@ public class ApisixClient extends GatewayClient {
     /**
      * 更新消费者
      *
+     * 注意：根据 APISIX 官方文档，更新 Consumer 使用 PUT /apisix/admin/consumers
+     * username 字段在请求体中，而不是在 URL 路径中
+     *
      * @param username 消费者用户名
      * @param consumer 消费者配置
      * @return 更新后的消费者
      */
     public ApisixConsumer updateConsumer(String username, ApisixConsumer consumer) {
+        // 确保 consumer 对象包含 username
+        consumer.setUsername(username);
+
         execute(
-                "/consumers/" + username,
+                "/consumers",
                 HttpMethod.PUT,
                 null,
                 consumer,

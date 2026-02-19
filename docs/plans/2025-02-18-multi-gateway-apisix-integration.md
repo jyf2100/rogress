@@ -643,9 +643,34 @@ Consumer > Consumer Group > Route > Plugin Config > Service
 
 ### 8.5 实现对比
 
-| 功能 | 当前实现 | 官方格式 | 备注 |
-|------|---------|---------|------|
-| 创建 Consumer | `PUT /consumers/{username}` | `PUT /consumers` (username 在 body) | 两种格式可能都支持 |
-| Credential 管理 | 未实现 | 已支持 | 后续可扩展 |
-| mcp-bridge 配置 | 通过 Route plugins | 同 | ✅ 一致 |
+| 功能 | 修复前 | 修复后 | 官方格式 | 备注 |
+|------|--------|--------|---------|------|
+| 创建 Consumer | `PUT /consumers/{username}` | `PUT /consumers` | `PUT /consumers` (username 在 body) | ✅ 已修复 |
+| 更新 Consumer | `PUT /consumers/{username}` | `PUT /consumers` | `PUT /consumers` (username 在 body) | ✅ 已修复 |
+| 删除 Consumer | `DELETE /consumers/{username}` | 同 | `DELETE /consumers/{username}` | ✅ 一致 |
+| Credential 管理 | 未实现 | 未实现 | 已支持 | 后续可扩展 |
+| mcp-bridge 配置 | 通过 Route plugins | 同 | 同 | ✅ 一致 |
+
+---
+
+## 9. 修复记录
+
+### 9.1 Consumer API 格式修复 (2026-02-19)
+
+**问题**: createConsumer 和 updateConsumer 使用的 URL 格式与官方文档不一致
+
+**修复内容**:
+- `createConsumer`: `PUT /consumers/{username}` → `PUT /consumers` (username 在 body)
+- `updateConsumer`: `PUT /consumers/{username}` → `PUT /consumers` (username 在 body)
+
+**变更文件**:
+- Modify: `portal-server/.../gateway/client/ApisixClient.java`
+- Create: `portal-server/src/test/.../ApisixConsumerApiFormatTest.java`
+
+**测试验证**:
+```bash
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
+mvn test -pl portal-server -Dtest="Apisix*Test"
+# Tests run: 68, Failures: 0, Errors: 0, Skipped: 0 - BUILD SUCCESS
+```
 
