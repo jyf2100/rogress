@@ -46,6 +46,7 @@ public class IdGenerator {
     private static final String ADMINISTRATOR_PREFIX = "admin-";
     private static final String NACOS_PREFIX = "nacos-";
     private static final String HIGRESS_PREFIX = "higress-";
+    private static final String APISIX_PREFIX = "apisix-";
     private static final String CATEGORY_PREFIX = "category-";
 
     private static final String SESSION_PREFIX = "session-";
@@ -53,6 +54,10 @@ public class IdGenerator {
 
     public static String genHigressGatewayId() {
         return HIGRESS_PREFIX + ObjectId.next();
+    }
+
+    public static String genApisixGatewayId() {
+        return APISIX_PREFIX + ObjectId.next();
     }
 
     public static String genPortalId() {

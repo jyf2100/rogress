@@ -27,6 +27,7 @@ import com.alibaba.apiopenplatform.support.gateway.APIGConfig;
 import com.alibaba.apiopenplatform.support.gateway.AdpAIGatewayConfig;
 import com.alibaba.apiopenplatform.support.gateway.HigressConfig;
 import com.alibaba.apiopenplatform.support.gateway.ApsaraGatewayConfig;
+import com.alibaba.apiopenplatform.support.gateway.ApisixConfig;
 import lombok.Data;
 
 import jakarta.validation.Valid;
@@ -55,11 +56,14 @@ public class ImportGatewayParam implements InputConverter<Gateway> {
 
     private HigressConfig higressConfig;
 
+    private ApisixConfig apisixConfig;
+
     @AssertTrue(message = "网关配置无效")
     private boolean isGatewayConfigValid() {
         return (gatewayType.isAPIG() && !gatewayType.equals(GatewayType.ADP_AI_GATEWAY) && apigConfig != null && StrUtil.isNotBlank(gatewayId))
                 || (gatewayType.equals(GatewayType.ADP_AI_GATEWAY) && adpAIGatewayConfig != null && StrUtil.isNotBlank(gatewayId))
                 || (gatewayType.isApsaraGateway() && apsaraGatewayConfig != null && StrUtil.isNotBlank(gatewayId))
-                || (gatewayType.isHigress() && higressConfig != null);
+                || (gatewayType.isHigress() && higressConfig != null)
+                || (gatewayType.isApisix() && apisixConfig != null && StrUtil.isNotBlank(apisixConfig.getAdminApiEndpoint()));
     }
 }

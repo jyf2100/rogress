@@ -102,6 +102,9 @@ public class GatewayServiceImpl implements GatewayService, ApplicationContextAwa
         if (gateway.getGatewayType().isHigress()) {
             gateway.setGatewayId(IdGenerator.genHigressGatewayId());
         }
+        if (gateway.getGatewayType().isApisix()) {
+            gateway.setGatewayId(IdGenerator.genApisixGatewayId());
+        }
         gateway.setAdminId(contextHolder.getUser());
         gatewayRepository.save(gateway);
     }
