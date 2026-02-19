@@ -584,3 +584,68 @@ mvn test -pl portal-server -Dtest="Apisix*Test"
 - Model APIs 管理（当前抛出 UnsupportedOperationException）
 - Dashboard 集成（当前抛出 UnsupportedOperationException）
 
+---
+
+## 8. APISIX 文档研读笔记 (2026-02-19)
+
+### 8.1 Consumer API 格式
+
+**官方 API 格式**:
+```
+PUT /apisix/admin/consumers          # 创建 Consumer (username 在请求体中)
+GET /apisix/admin/consumers          # 获取列表
+GET /apisix/admin/consumers/{username}  # 获取单个
+DELETE /apisix/admin/consumers/{username}  # 删除
+```
+
+**请求体结构**:
+```json
+{
+    "username": "jack",  // 必填
+    "plugins": {
+        "key-auth": { "key": "auth-one" }
+    },
+    "desc": "描述",
+    "labels": { "env": "production" }
+}
+```
+
+### 8.2 Credential 资源 (新版)
+
+用于管理 Consumer 的多个认证凭证:
+```
+PUT /apisix/admin/consumers/{username}/credentials/{credential_id}
+GET /apisix/admin/consumers/{username}/credentials
+DELETE /apisix/admin/consumers/{username}/credentials/{credential_id}
+```
+
+### 8.3 mcp-bridge 插件架构
+
+**关键设计**:
+1. **双通道架构**: SSE (服务端推送) + HTTP POST (客户端消息)
+2. **进程生命周期绑定**: 每个 SSE 连接对应一个独立的 MCP 进程
+3. **消息队列解耦**: 使用 `ngx.shared.DICT` 实现跨请求消息传递
+
+**优先级**: 510
+
+**架构组件**:
+- `mcp-bridge.lua` - 主插件
+- `server_wrapper.lua` - 服务器包装器
+- `server.lua` - MCP 服务器
+- `sse.lua` - SSE 实现
+- `shared_dict broker` - 共享字典消息代理
+
+### 8.4 插件优先级顺序
+
+```
+Consumer > Consumer Group > Route > Plugin Config > Service
+```
+
+### 8.5 实现对比
+
+| 功能 | 当前实现 | 官方格式 | 备注 |
+|------|---------|---------|------|
+| 创建 Consumer | `PUT /consumers/{username}` | `PUT /consumers` (username 在 body) | 两种格式可能都支持 |
+| Credential 管理 | 未实现 | 已支持 | 后续可扩展 |
+| mcp-bridge 配置 | 通过 Route plugins | 同 | ✅ 一致 |
+
