@@ -1,0 +1,35 @@
+# APISIX 快速启动配置
+# 用于本地开发和集成测试
+
+services:
+  etcd:
+    image: bitnami/etcd:3.5.11
+    container_name: apisix-etcd
+    environment:
+      ETCD_ENABLE_V2: "true"
+      ALLOW_NONE_AUTHENTICATION: "yes"
+      ETCD_ADVERTISE_CLIENT_URLS: "http://etcd:2379"
+      ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379"
+    ports:
+      - "2379:2379"
+    networks:
+      - apisix-network
+
+  apisix:
+    image: apache/apisix:3.8.0-debian
+    container_name: apisix-gateway
+    restart: always
+    volumes:
+      - ./apisix-config.yaml:/usr/local/apisix/conf/config.yaml:ro
+      - ./apisix-plugins:/usr/local/apisix/apisix/plugins:ro
+    ports:
+      - "9080:9080"   # APISIX Proxy Port
+      - "9180:9180"   # APISIX Admin API Port
+    depends_on:
+      - etcd
+    networks:
+      - apisix-network
+
+networks:
+  apisix-network:
+    driver: bridge

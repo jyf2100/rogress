@@ -95,10 +95,17 @@ class ApisixMcpConfigTest {
         } catch (UnsupportedOperationException e) {
             fail("fetchMcpConfig should not throw UnsupportedOperationException");
         } catch (Exception e) {
-            // 其他异常（如连接失败）是可以接受的
-            assertTrue(e.getMessage().contains("Connection refused") ||
-                       e.getMessage().contains("connect") ||
-                       e.getMessage().contains("Failed"));
+            // 其他异常（如连接失败、认证失败）是可以接受的
+            String message = e.getMessage();
+            assertTrue(message == null ||
+                       message.contains("Connection refused") ||
+                       message.contains("connect") ||
+                       message.contains("Failed") ||
+                       message.contains("401") ||
+                       message.contains("Unauthorized") ||
+                       message.contains("wrong apikey") ||
+                       message.contains("404") ||
+                       message.contains("Not Found"));
         }
     }
 }

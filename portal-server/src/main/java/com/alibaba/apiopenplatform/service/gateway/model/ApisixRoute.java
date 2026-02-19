@@ -19,6 +19,8 @@
 
 package com.alibaba.apiopenplatform.service.gateway.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.util.List;
@@ -30,6 +32,7 @@ import java.util.Map;
  * 表示 APISIX Admin API 返回的 Route 对象
  */
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApisixRoute {
 
     /**
@@ -110,6 +113,7 @@ public class ApisixRoute {
     /**
      * 检查是否包含 mcp-bridge 插件
      */
+    @JsonIgnore
     public boolean hasMcpBridgePlugin() {
         return plugins != null && plugins.containsKey("mcp-bridge");
     }
@@ -117,6 +121,7 @@ public class ApisixRoute {
     /**
      * 获取 mcp-bridge 插件配置
      */
+    @JsonIgnore
     @SuppressWarnings("unchecked")
     public Map<String, Object> getMcpBridgeConfig() {
         if (!hasMcpBridgePlugin()) {

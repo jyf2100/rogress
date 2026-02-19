@@ -194,7 +194,7 @@ public class ApisixClient extends GatewayClient {
             return new ArrayList<>();
         }
 
-        return response.getList().getNodes().stream()
+        return response.getList().stream()
                 .map(node -> {
                     ApisixRoute route = convertToRoute(node.getValue());
                     route.setId(extractIdFromKey(node.getKey()));
@@ -316,7 +316,7 @@ public class ApisixClient extends GatewayClient {
             return new ArrayList<>();
         }
 
-        return response.getList().getNodes().stream()
+        return response.getList().stream()
                 .map(node -> {
                     ApisixConsumer consumer = convertToConsumer(node.getValue());
                     consumer.setUsername(extractIdFromKey(node.getKey()));
@@ -458,19 +458,13 @@ public class ApisixClient extends GatewayClient {
     // ==================== 响应模型类 ====================
 
     /**
-     * APISIX 列表响应
+     * APISIX v3 列表响应
+     * 格式: { "list": [...], "total": n }
      */
     @Data
     public static class ApisixListResponse<T> {
-        private ApisixListNode<T> list;
-    }
-
-    /**
-     * APISIX 列表节点
-     */
-    @Data
-    public static class ApisixListNode<T> {
-        private List<ApisixNode<T>> nodes;
+        private List<ApisixNode<T>> list;
+        private Integer total;
     }
 
     /**
@@ -480,6 +474,8 @@ public class ApisixClient extends GatewayClient {
     public static class ApisixNode<T> {
         private String key;
         private T value;
+        private Long modifiedIndex;
+        private Long createdIndex;
     }
 
     /**

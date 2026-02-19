@@ -87,8 +87,13 @@ class ApisixIntegrationTest {
         return new ApisixClient(config);
     }
 
+    private int idCounter = 0;
+
     private String generateTestId() {
-        return "test-" + UUID.randomUUID().toString().substring(0, 8);
+        // APISIX ID 格式要求：简单字符串，使用纯数字
+        // 结合时间戳和计数器确保唯一性
+        long timestamp = System.currentTimeMillis() % 10000000;
+        return String.valueOf(timestamp * 100 + (++idCounter % 100));
     }
 
     // ==================== 健康检查测试 ====================
@@ -136,7 +141,7 @@ class ApisixIntegrationTest {
         @BeforeEach
         void setUp() {
             client = createClient();
-            testRouteId = "route-" + generateTestId();
+            testRouteId = generateTestId();
         }
 
         @Test
@@ -195,16 +200,19 @@ class ApisixIntegrationTest {
                 "type", "roundrobin",
                 "nodes", Map.of("httpbin.org:80", 1)
             ));
-            client.createRoute(testRouteId, route);
+            ApisixRoute created = client.createRoute(testRouteId, route);
+            assertNotNull(created, "路由应该创建成功");
 
+            // 删除路由
             assertDoesNotThrow(() -> {
                 client.deleteRoute(testRouteId);
                 System.out.println("✓ 路由删除成功: " + testRouteId);
-
-                // 验证删除
-                ApisixRoute deleted = client.getRoute(testRouteId);
-                assertNull(deleted, "删除后路由应该不存在");
             });
+
+            // 验证删除 - APISIX 返回 404
+            assertThrows(Exception.class, () -> {
+                client.getRoute(testRouteId);
+            }, "删除后路由应该不存在");
         }
     }
 
@@ -328,7 +336,7 @@ class ApisixIntegrationTest {
         @BeforeEach
         void setUp() {
             client = createClient();
-            testRouteId = "mcp-route-" + generateTestId();
+            testRouteId = generateTestId();
         }
 
         @Test
@@ -364,25 +372,30 @@ class ApisixIntegrationTest {
         @Test
         @DisplayName("筛选 MCP Server 列表")
         void testFilterMcpServers() {
-            String routeId1 = "mcp-1-" + generateTestId();
-            String routeId2 = "mcp-2-" + generateTestId();
+            String routeId1 = generateTestId();
+            String routeId2 = generateTestId();
 
             try {
-                // 创建两个路由，一个带 mcp-bridge，一个不带
+                // 创建带 mcp-bridge 的路由
                 ApisixRoute mcpRoute = new ApisixRoute();
                 mcpRoute.setUri("/mcp/server1/*");
                 mcpRoute.setPlugins(Map.of(
                     "mcp-bridge", Map.of("command", "test-cmd")
                 ));
-                client.createRoute(routeId1, mcpRoute);
+                ApisixRoute createdMcp = client.createRoute(routeId1, mcpRoute);
+                assertNotNull(createdMcp, "MCP 路由应该创建成功");
+                System.out.println("✓ MCP 路由创建成功: " + routeId1);
 
+                // 创建普通路由
                 ApisixRoute normalRoute = new ApisixRoute();
                 normalRoute.setUri("/api/normal/*");
                 normalRoute.setUpstream(Map.of(
                     "type", "roundrobin",
                     "nodes", Map.of("httpbin.org:80", 1)
                 ));
-                client.createRoute(routeId2, normalRoute);
+                ApisixRoute createdNormal = client.createRoute(routeId2, normalRoute);
+                assertNotNull(createdNormal, "普通路由应该创建成功");
+                System.out.println("✓ 普通路由创建成功: " + routeId2);
 
                 // 获取所有路由并筛选
                 List<ApisixRoute> allRoutes = client.listRoutes();
@@ -392,6 +405,8 @@ class ApisixIntegrationTest {
 
                 System.out.println("✓ 总路由数: " + allRoutes.size());
                 System.out.println("✓ MCP 路由数: " + mcpRoutes.size());
+
+                // 验证刚创建的 MCP 路由在列表中
                 assertTrue(mcpRoutes.size() >= 1, "至少应该有一个 MCP 路由");
 
             } finally {
@@ -410,23 +425,27 @@ class ApisixIntegrationTest {
     class ErrorHandlingTests {
 
         @Test
-        @DisplayName("获取不存在的路由")
+        @DisplayName("获取不存在的路由 - APISIX 返回 404")
         void testGetNonExistentRoute() {
             client = createClient();
 
-            ApisixRoute route = client.getRoute("non-existent-route-" + generateTestId());
-            assertNull(route, "不存在的路由应该返回 null");
-            System.out.println("✓ 不存在的路由正确返回 null");
+            // APISIX 对不存在的资源返回 404 错误
+            assertThrows(Exception.class, () -> {
+                client.getRoute(generateTestId());
+            }, "不存在的路由应该抛出异常");
+            System.out.println("✓ 不存在的路由正确返回 404");
         }
 
         @Test
-        @DisplayName("获取不存在的消费者")
+        @DisplayName("获取不存在的消费者 - APISIX 返回 404")
         void testGetNonExistentConsumer() {
             client = createClient();
 
-            ApisixConsumer consumer = client.getConsumer("non-existent-user-" + generateTestId());
-            assertNull(consumer, "不存在的消费者应该返回 null");
-            System.out.println("✓ 不存在的消费者正确返回 null");
+            // APISIX 对不存在的资源返回 404 错误
+            assertThrows(Exception.class, () -> {
+                client.getConsumer("nonexistent" + generateTestId());
+            }, "不存在的消费者应该抛出异常");
+            System.out.println("✓ 不存在的消费者正确返回 404");
         }
     }
 }

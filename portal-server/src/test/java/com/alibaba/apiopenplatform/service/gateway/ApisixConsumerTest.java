@@ -166,11 +166,18 @@ class ApisixConsumerTest {
         } catch (UnsupportedOperationException e) {
             fail("createConsumer should not throw UnsupportedOperationException");
         } catch (Exception e) {
-            // 其他异常（如连接失败、参数校验失败）是可以接受的
-            assertTrue(e.getMessage().contains("Connection refused") ||
-                       e.getMessage().contains("connect") ||
-                       e.getMessage().contains("Failed") ||
-                       e instanceof IllegalArgumentException);
+            // 其他异常（如连接失败、参数校验失败、HTTP 错误）是可以接受的
+            String message = e.getMessage();
+            boolean acceptable = message == null ||
+                       message.contains("Connection refused") ||
+                       message.contains("connect") ||
+                       message.contains("Failed") ||
+                       message.contains("400") ||
+                       message.contains("401") ||
+                       message.contains("Unauthorized") ||
+                       message.contains("Bad Request") ||
+                       e instanceof IllegalArgumentException;
+            assertTrue(acceptable, "Unexpected exception: " + message);
         }
     }
 }

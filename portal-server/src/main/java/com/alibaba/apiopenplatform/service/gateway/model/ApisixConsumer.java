@@ -19,6 +19,7 @@
 
 package com.alibaba.apiopenplatform.service.gateway.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.util.Map;
@@ -29,6 +30,7 @@ import java.util.Map;
  * 表示 APISIX Admin API 中的 Consumer 对象
  */
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApisixConsumer {
 
     /**
@@ -52,12 +54,12 @@ public class ApisixConsumer {
     private Map<String, String> labels;
 
     /**
-     * 创建时间
+     * 创建时间（只读字段，由 APISIX 自动管理）
      */
     private Long create_time;
 
     /**
-     * 更新时间
+     * 更新时间（只读字段，由 APISIX 自动管理）
      */
     private Long update_time;
 
