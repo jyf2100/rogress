@@ -25,10 +25,14 @@ import com.alibaba.apiopenplatform.dto.result.common.DomainResult;
 import com.alibaba.apiopenplatform.dto.result.common.PageResult;
 import com.alibaba.apiopenplatform.dto.result.gateway.GatewayResult;
 import com.alibaba.apiopenplatform.dto.result.httpapi.APIResult;
+import com.alibaba.apiopenplatform.dto.result.httpapi.ApisixHttpApiResult;
 import com.alibaba.apiopenplatform.dto.result.mcp.ApisixMCPServerResult;
 import com.alibaba.apiopenplatform.dto.result.mcp.GatewayMCPServerResult;
 import com.alibaba.apiopenplatform.dto.result.mcp.MCPConfigResult;
+import com.alibaba.apiopenplatform.dto.result.model.ApisixModelResult;
 import com.alibaba.apiopenplatform.dto.result.model.GatewayModelAPIResult;
+import com.alibaba.apiopenplatform.dto.result.model.ModelConfigResult;
+import com.alibaba.apiopenplatform.dto.result.httpapi.HttpRouteResult;
 import com.alibaba.apiopenplatform.entity.Consumer;
 import com.alibaba.apiopenplatform.entity.ConsumerCredential;
 import com.alibaba.apiopenplatform.entity.Gateway;
@@ -65,12 +69,32 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
 
     @Override
     public PageResult<APIResult> fetchHTTPAPIs(Gateway gateway, int page, int size) {
-        throw new UnsupportedOperationException("APISIX gateway does not support HTTP APIs management yet");
+        ApisixClient client = getClient(gateway);
+
+        // 获取所有 Route，排除 mcp-bridge 和 ai-proxy 插件的路由
+        List<ApisixRoute> routes = client.listRoutes();
+
+        List<APIResult> httpApis = routes.stream()
+                .filter(route -> !route.hasMcpBridgePlugin() && !route.hasAiProxyPlugin())
+                .map(route -> new ApisixHttpApiResult().convertFrom(route))
+                .collect(Collectors.toList());
+
+        // 分页处理
+        int total = httpApis.size();
+        int fromIndex = (page - 1) * size;
+        int toIndex = Math.min(fromIndex + size, total);
+
+        if (fromIndex >= total) {
+            return PageResult.of(Collections.emptyList(), page, size, total);
+        }
+
+        return PageResult.of(httpApis.subList(fromIndex, toIndex), page, size, total);
     }
 
     @Override
     public PageResult<APIResult> fetchRESTAPIs(Gateway gateway, int page, int size) {
-        throw new UnsupportedOperationException("APISIX gateway does not support REST APIs management yet");
+        // REST APIs 与 HTTP APIs 相同，复用逻辑
+        return fetchHTTPAPIs(gateway, page, size);
     }
 
     @Override
@@ -104,13 +128,73 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
 
     @Override
     public PageResult<? extends GatewayModelAPIResult> fetchModelAPIs(Gateway gateway, int page, int size) {
-        // TODO: 实现 APISIX AI 模型路由获取
-        throw new UnsupportedOperationException("APISIX model APIs not implemented yet");
+        ApisixClient client = getClient(gateway);
+
+        // 获取所有 Route，筛选带 ai-proxy 插件的
+        List<ApisixRoute> routes = client.listRoutes();
+
+        List<ApisixModelResult> models = routes.stream()
+                .filter(ApisixRoute::hasAiProxyPlugin)
+                .map(route -> new ApisixModelResult().convertFrom(route))
+                .collect(Collectors.toList());
+
+        // 分页处理
+        int total = models.size();
+        int fromIndex = (page - 1) * size;
+        int toIndex = Math.min(fromIndex + size, total);
+
+        if (fromIndex >= total) {
+            return PageResult.of(Collections.emptyList(), page, size, total);
+        }
+
+        return PageResult.of(models.subList(fromIndex, toIndex), page, size, total);
     }
 
     @Override
     public String fetchAPIConfig(Gateway gateway, Object config) {
-        throw new UnsupportedOperationException("APISIX gateway does not support fetching API config yet");
+        ApisixRefConfig refConfig = (ApisixRefConfig) config;
+        ApisixClient client = getClient(gateway);
+
+        // 获取 Route 详情
+        ApisixRoute route = client.getRoute(refConfig.getRouteId());
+        if (route == null) {
+            throw new RuntimeException("Route not found: " + refConfig.getRouteId());
+        }
+
+        // 构建域信息
+        List<DomainResult> domains = Collections.singletonList(
+                DomainResult.builder()
+                        .domain("<apisix-gateway-ip>")
+                        .protocol("http")
+                        .build()
+        );
+
+        // 构建路由匹配信息
+        HttpRouteResult.RouteMatchPath matchPath = HttpRouteResult.RouteMatchPath.builder()
+                .value(route.getUri())
+                .type("PREFIX")
+                .build();
+
+        HttpRouteResult.RouteMatchResult routeMatchResult = HttpRouteResult.RouteMatchResult.builder()
+                .methods(route.getMethods() != null ? route.getMethods() : Collections.singletonList("GET"))
+                .path(matchPath)
+                .build();
+
+        HttpRouteResult httpRouteResult = new HttpRouteResult();
+        httpRouteResult.setDomains(domains);
+        httpRouteResult.setMatch(routeMatchResult);
+        httpRouteResult.setDescription(route.getDesc());
+
+        // 构建结果
+        var result = new java.util.LinkedHashMap<String, Object>();
+        result.put("apiId", route.getId());
+        result.put("apiName", route.getName() != null ? route.getName() : route.getId());
+        result.put("uri", route.getUri());
+        result.put("methods", route.getMethods());
+        result.put("enabled", route.isEnabled());
+        result.put("routes", Collections.singletonList(httpRouteResult));
+
+        return JSONUtil.toJsonStr(result);
     }
 
     @Override
@@ -165,8 +249,50 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
 
     @Override
     public String fetchModelConfig(Gateway gateway, Object conf) {
-        // TODO: 实现 APISIX AI 模型配置获取
-        throw new UnsupportedOperationException("APISIX model config not implemented yet");
+        ApisixRefConfig refConfig = (ApisixRefConfig) conf;
+        ApisixClient client = getClient(gateway);
+
+        // 获取 Route 详情
+        ApisixRoute route = client.getRoute(refConfig.getRouteId());
+        if (route == null) {
+            throw new RuntimeException("Route not found: " + refConfig.getRouteId());
+        }
+
+        // 构建域信息
+        List<DomainResult> domains = Collections.singletonList(
+                DomainResult.builder()
+                        .domain("<apisix-gateway-ip>")
+                        .protocol("http")
+                        .build()
+        );
+
+        // 构建路由匹配信息
+        HttpRouteResult.RouteMatchPath matchPath = HttpRouteResult.RouteMatchPath.builder()
+                .value(route.getUri())
+                .type("PREFIX")
+                .build();
+
+        HttpRouteResult.RouteMatchResult routeMatchResult = HttpRouteResult.RouteMatchResult.builder()
+                .methods(route.getMethods() != null ? route.getMethods() : Collections.singletonList("POST"))
+                .path(matchPath)
+                .build();
+
+        HttpRouteResult httpRouteResult = new HttpRouteResult();
+        httpRouteResult.setDomains(domains);
+        httpRouteResult.setMatch(routeMatchResult);
+        httpRouteResult.setDescription(route.getDesc());
+
+        // 构建模型配置
+        ModelConfigResult.ModelAPIConfig config = ModelConfigResult.ModelAPIConfig.builder()
+                .aiProtocols(Collections.singletonList("OpenAI/V1"))
+                .modelCategory("Text")
+                .routes(Collections.singletonList(httpRouteResult))
+                .build();
+
+        ModelConfigResult result = new ModelConfigResult();
+        result.setModelAPIConfig(config);
+
+        return JSONUtil.toJsonStr(result);
     }
 
     @Override

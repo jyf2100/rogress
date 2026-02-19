@@ -25,6 +25,8 @@ import com.alibaba.apiopenplatform.support.enums.GatewayType;
 import com.alibaba.apiopenplatform.support.gateway.APIGConfig;
 import com.alibaba.apiopenplatform.support.gateway.AdpAIGatewayConfig;
 import com.alibaba.apiopenplatform.support.gateway.HigressConfig;
+import com.alibaba.apiopenplatform.support.gateway.ApisixConfig;
+import com.alibaba.apiopenplatform.support.gateway.ApsaraGatewayConfig;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -50,15 +52,23 @@ public class GatewayResult implements OutputConverter<GatewayResult, Gateway> {
 
     private HigressConfigResult higressConfig;
 
+    private ApisixConfigResult apisixConfig;
+
+    private ApsaraGatewayConfigResult apsaraGatewayConfig;
+
     private LocalDateTime createAt;
 
     @Override
     public GatewayResult convertFrom(Gateway source) {
         OutputConverter.super.convertFrom(source);
-        if (source.getGatewayType().isAPIG() && !source.getGatewayType().equals(GatewayType.ADP_AI_GATEWAY)) {
+        if (source.getGatewayType().isAPIG() && !source.getGatewayType().equals(GatewayType.ADP_AI_GATEWAY) && !source.getGatewayType().equals(GatewayType.APSARA_GATEWAY)) {
             setApigConfig(new APIGConfigResult().convertFrom(source.getApigConfig()));
         } else if (source.getGatewayType().equals(GatewayType.ADP_AI_GATEWAY)) {
             setAdpAIGatewayConfig(new AdpAIGatewayConfigResult().convertFrom(source.getAdpAIGatewayConfig()));
+        } else if (source.getGatewayType().equals(GatewayType.APSARA_GATEWAY)) {
+            setApsaraGatewayConfig(new ApsaraGatewayConfigResult().convertFrom(source.getApsaraGatewayConfig()));
+        } else if (source.getGatewayType().equals(GatewayType.APISIX)) {
+            setApisixConfig(new ApisixConfigResult().convertFrom(source.getApisixConfig()));
         } else {
             setHigressConfig(new HigressConfigResult().convertFrom(source.getHigressConfig()));
         }
@@ -81,5 +91,18 @@ public class GatewayResult implements OutputConverter<GatewayResult, Gateway> {
     public static class HigressConfigResult implements OutputConverter<HigressConfigResult, HigressConfig> {
         private String address;
         private String username;
+    }
+
+    @Data
+    public static class ApisixConfigResult implements OutputConverter<ApisixConfigResult, ApisixConfig> {
+        private String adminApiEndpoint;
+        private Integer timeout;
+    }
+
+    @Data
+    public static class ApsaraGatewayConfigResult implements OutputConverter<ApsaraGatewayConfigResult, ApsaraGatewayConfig> {
+        private String endpoint;
+        private String product;
+        private String version;
     }
 }

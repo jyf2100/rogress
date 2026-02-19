@@ -192,6 +192,46 @@ export default function Consoles() {
     },
   ]
 
+  // APISIX 网关的列定义
+  const apisixColumns = [
+    {
+      title: '网关名称/ID',
+      key: 'nameAndId',
+      width: 280,
+      render: (_: any, record: Gateway) => (
+        <div>
+          <div className="text-sm font-medium text-gray-900 truncate">
+            {record.gatewayName}
+          </div>
+          <div className="text-xs text-gray-500 truncate">
+            {record.gatewayId}
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: 'Admin API 地址',
+      dataIndex: 'adminApiEndpoint',
+      key: 'adminApiEndpoint',
+      render: (_: any, record: Gateway) => {
+        return record.apisixConfig?.adminApiEndpoint || '-'
+      }
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'createAt',
+      key: 'createAt',
+      render: (date: string) => formatDateTime(date)
+    },
+    {
+      title: '操作',
+      key: 'action',
+      render: (_: any, record: Gateway) => (
+        <Button type="link" danger onClick={() => handleDeleteGateway(record.gatewayId)}>删除</Button>
+      ),
+    },
+  ]
+
   // Higress 网关的列定义
   const higressColumns = [
     {
@@ -398,12 +438,40 @@ export default function Consoles() {
               </div>
             ),
           },
+          {
+            key: 'APISIX',
+            label: 'APISIX 网关',
+            children: (
+              <div className="bg-white rounded-lg">
+                <div className="py-4 pl-4 border-b border-gray-200">
+                  <h3 className="text-lg font-medium text-gray-900">APISIX 网关</h3>
+                  <p className="text-sm text-gray-500 mt-1">Apache APISIX 云原生网关</p>
+                </div>
+                <Table
+                  columns={apisixColumns}
+                  dataSource={gateways}
+                  rowKey="gatewayId"
+                  loading={loading}
+                  pagination={{
+                    current: pagination.current,
+                    pageSize: pagination.pageSize,
+                    total: pagination.total,
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                    showTotal: (total) => `共 ${total} 条`,
+                    onChange: handlePaginationChange,
+                    onShowSizeChange: handlePaginationChange,
+                  }}
+                />
+              </div>
+            ),
+          },
         ]}
       />
 
       <ImportGatewayModal
         visible={importVisible}
-        gatewayType={selectedGatewayType as 'APIG_API' | 'APIG_AI' | 'ADP_AI_GATEWAY' | 'APSARA_GATEWAY'}
+        gatewayType={selectedGatewayType as 'APIG_API' | 'APIG_AI' | 'ADP_AI_GATEWAY' | 'APSARA_GATEWAY' | 'APISIX'}
         onCancel={() => setImportVisible(false)}
         onSuccess={handleImportSuccess}
       />

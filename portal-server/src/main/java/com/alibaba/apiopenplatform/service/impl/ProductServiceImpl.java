@@ -483,6 +483,8 @@ public class ProductServiceImpl implements ProductService {
             Object config;
             if (gateway.getGatewayType().isHigress()) {
                 config = productRef.getHigressRefConfig();
+            } else if (gateway.getGatewayType().isApisix()) {
+                config = productRef.getApisixRefConfig();
             } else if (gateway.getGatewayType().isAdpAIGateway()) {
                 config = productRef.getAdpAIGatewayRefConfig();
             } else if (gateway.getGatewayType().isApsaraGateway()) {

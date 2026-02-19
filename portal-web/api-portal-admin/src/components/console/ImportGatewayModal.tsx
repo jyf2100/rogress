@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import { Button, Table, Modal, Form, Input, message, Select } from 'antd'
+import { Button, Table, Modal, Form, Input, InputNumber, message, Select } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { gatewayApi } from '@/lib/api'
-import { Gateway, ApigConfig } from '@/types'
+import { Gateway, ApigConfig, ApisixConfig } from '@/types'
 import { getGatewayTypeLabel } from '@/lib/constant'
 
 interface ImportGatewayModalProps {
   visible: boolean
-  gatewayType: 'APIG_API' | 'APIG_AI' | 'ADP_AI_GATEWAY' | 'APSARA_GATEWAY'
+  gatewayType: 'APIG_API' | 'APIG_AI' | 'ADP_AI_GATEWAY' | 'APSARA_GATEWAY' | 'APISIX'
   onCancel: () => void
   onSuccess: () => void
 }
@@ -23,6 +23,12 @@ export default function ImportGatewayModal({ visible, gatewayType, onCancel, onS
     region: '',
     accessKey: '',
     secretKey: '',
+  })
+
+  const [apisixConfig, setApisixConfig] = useState<ApisixConfig>({
+    adminApiEndpoint: '',
+    adminApiKey: '',
+    timeout: 30000,
   })
 
   const [gatewayPagination, setGatewayPagination] = useState({
@@ -107,7 +113,7 @@ export default function ImportGatewayModal({ visible, gatewayType, onCancel, onS
 
   // 处理导入
   const handleImport = () => {
-    if (!selectedGateway) {
+    if (!selectedGateway && gatewayType !== 'APISIX') {
       message.warning('请选择一个Gateway')
       return
     }
@@ -119,6 +125,10 @@ export default function ImportGatewayModal({ visible, gatewayType, onCancel, onS
       payload.adpAIGatewayConfig = apigConfig
     } else if (gatewayType === 'APSARA_GATEWAY') {
       payload.apsaraGatewayConfig = apigConfig
+    } else if (gatewayType === 'APISIX') {
+      payload.apisixConfig = apisixConfig
+      payload.gatewayId = `apisix-${Date.now()}`
+      payload.gatewayName = payload.gatewayName || 'APISIX Gateway'
     } else {
       payload.apigConfig = apigConfig
     }
@@ -331,7 +341,7 @@ export default function ImportGatewayModal({ visible, gatewayType, onCancel, onS
               <Input />
             </Form.Item>
             <div className="flex gap-2">
-              <Button 
+              <Button
                 onClick={() => {
                   try {
                     const raw = localStorage.getItem('apsaraImportConfig')
@@ -349,7 +359,7 @@ export default function ImportGatewayModal({ visible, gatewayType, onCancel, onS
               >
                 填充上次参数
               </Button>
-              <Button 
+              <Button
                 type="primary"
                 onClick={() => {
                   importForm.validateFields().then((values) => {
@@ -362,6 +372,82 @@ export default function ImportGatewayModal({ visible, gatewayType, onCancel, onS
                 }}
               >
                 使用以上配置继续
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {gatewayType === 'APISIX' && (
+          <div className="mb-4">
+            <h3 className="text-lg font-medium mb-3">APISIX 配置</h3>
+            <Form.Item label="网关名称" name="gatewayName" rules={[{ required: true, message: '请输入网关名称' }]}>
+              <Input placeholder="如：生产环境 APISIX" />
+            </Form.Item>
+            <Form.Item
+              label="Admin API 地址"
+              name="adminApiEndpoint"
+              rules={[
+                { required: true, message: '请输入 Admin API 地址' },
+                { pattern: /^https?:\/\//i, message: '必须以 http:// 或 https:// 开头' }
+              ]}
+            >
+              <Input placeholder="如：http://localhost:9180" />
+            </Form.Item>
+            <Form.Item
+              label="Admin API Key"
+              name="adminApiKey"
+              rules={[{ required: true, message: '请输入 Admin API Key' }]}
+            >
+              <Input.Password placeholder="APISIX Admin API Key" />
+            </Form.Item>
+            <Form.Item
+              label="超时时间(ms)"
+              name="timeout"
+              initialValue={30000}
+              tooltip="请求 APISIX Admin API 的超时时间，单位毫秒"
+            >
+              <InputNumber min={1000} max={300000} step={1000} className="w-full" />
+            </Form.Item>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  try {
+                    const raw = localStorage.getItem('apisixImportConfig')
+                    if (!raw) {
+                      message.info('暂无历史参数')
+                      return
+                    }
+                    const data = JSON.parse(raw)
+                    importForm.setFieldsValue(data)
+                    message.success('已填充上次参数')
+                  } catch {
+                    message.error('读取历史参数失败')
+                  }
+                }}
+              >
+                填充上次参数
+              </Button>
+              <Button
+                type="primary"
+                onClick={() => {
+                  importForm.validateFields().then((values) => {
+                    setApisixConfig({
+                      adminApiEndpoint: values.adminApiEndpoint,
+                      adminApiKey: values.adminApiKey,
+                      timeout: values.timeout,
+                    })
+                    localStorage.setItem('apisixImportConfig', JSON.stringify(values))
+                    // APISIX 直接导入，不需要获取列表
+                    setSelectedGateway({
+                      gatewayId: '',
+                      gatewayName: values.gatewayName,
+                      gatewayType: 'APISIX',
+                      createAt: new Date().toISOString(),
+                    })
+                  })
+                }}
+              >
+                验证配置
               </Button>
             </div>
           </div>

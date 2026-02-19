@@ -11,6 +11,7 @@ import lombok.Data;
         oneOf = {
                 HigressModelResult.class,
                 AIGWModelAPIResult.class,
+                ApisixModelResult.class,
         },
         discriminatorProperty = "type"
 )

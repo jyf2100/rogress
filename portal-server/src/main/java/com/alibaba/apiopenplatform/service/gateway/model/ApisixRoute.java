@@ -129,4 +129,68 @@ public class ApisixRoute {
         }
         return (Map<String, Object>) plugins.get("mcp-bridge");
     }
+
+    /**
+     * 检查是否包含 ai-proxy 插件
+     */
+    @JsonIgnore
+    public boolean hasAiProxyPlugin() {
+        return plugins != null && plugins.containsKey("ai-proxy");
+    }
+
+    /**
+     * 获取 ai-proxy 插件配置
+     */
+    @JsonIgnore
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getAiProxyConfig() {
+        if (!hasAiProxyPlugin()) {
+            return null;
+        }
+        return (Map<String, Object>) plugins.get("ai-proxy");
+    }
+
+    /**
+     * 获取 ai-proxy 插件中的 provider
+     */
+    @JsonIgnore
+    public String getAiProxyProvider() {
+        Map<String, Object> config = getAiProxyConfig();
+        if (config != null && config.containsKey("provider")) {
+            return (String) config.get("provider");
+        }
+        return null;
+    }
+
+    /**
+     * 获取 ai-proxy 插件中的 model 名称
+     */
+    @JsonIgnore
+    @SuppressWarnings("unchecked")
+    public String getAiProxyModelName() {
+        Map<String, Object> config = getAiProxyConfig();
+        if (config != null) {
+            // 优先从 model.name 获取
+            Object modelObj = config.get("model");
+            if (modelObj instanceof Map) {
+                Map<String, Object> modelConfig = (Map<String, Object>) modelObj;
+                if (modelConfig.containsKey("name")) {
+                    return (String) modelConfig.get("name");
+                }
+            }
+            // 兼容直接配置 model 字段
+            if (config.containsKey("model") && config.get("model") instanceof String) {
+                return (String) config.get("model");
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 检查路由是否启用
+     */
+    @JsonIgnore
+    public boolean isEnabled() {
+        return status == null || status;
+    }
 }

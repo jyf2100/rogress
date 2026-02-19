@@ -25,6 +25,7 @@ import com.alibaba.apiopenplatform.support.enums.SourceType;
 import com.alibaba.apiopenplatform.support.product.APIGRefConfig;
 import com.alibaba.apiopenplatform.support.product.HigressRefConfig;
 import com.alibaba.apiopenplatform.support.product.NacosRefConfig;
+import com.alibaba.apiopenplatform.support.product.ApisixRefConfig;
 import lombok.Data;
 
 import jakarta.validation.constraints.NotNull;
@@ -48,5 +49,7 @@ public class CreateProductRefParam implements InputConverter<ProductRef> {
     private HigressRefConfig higressRefConfig;
 
     private NacosRefConfig nacosRefConfig;
+
+    private ApisixRefConfig apisixRefConfig;
 
 }

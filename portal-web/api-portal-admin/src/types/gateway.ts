@@ -1,11 +1,12 @@
 export interface Gateway {
   gatewayId: string
   gatewayName: string
-  gatewayType: 'APIG_API' | 'HIGRESS' | 'APIG_AI' | 'ADP_AI_GATEWAY' | 'APSARA_GATEWAY'
+  gatewayType: 'APIG_API' | 'HIGRESS' | 'APIG_AI' | 'ADP_AI_GATEWAY' | 'APSARA_GATEWAY' | 'APISIX'
   createAt: string
   apigConfig?: ApigConfig
   higressConfig?: HigressConfig
   apsaraGatewayConfig?: ApsaraGatewayConfig
+  apisixConfig?: ApisixConfig
 }
 
 export interface ApigConfig {
@@ -29,6 +30,12 @@ export interface ApsaraGatewayConfig {
   xAcsRoleId?: string
 }
 
+export interface ApisixConfig {
+  adminApiEndpoint: string
+  adminApiKey: string
+  timeout?: number
+}
+
 export interface NacosInstance {
   nacosId: string
   nacosName: string
@@ -42,4 +49,4 @@ export interface NacosInstance {
   createAt?: string | number
 }
 
-export type GatewayType = 'APIG_API' | 'APIG_AI' | 'HIGRESS' | 'ADP_AI_GATEWAY' | 'APSARA_GATEWAY'
+export type GatewayType = 'APIG_API' | 'APIG_AI' | 'HIGRESS' | 'ADP_AI_GATEWAY' | 'APSARA_GATEWAY' | 'APISIX'

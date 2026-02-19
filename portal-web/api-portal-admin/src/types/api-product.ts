@@ -162,6 +162,20 @@ export interface AIGatewayModelItem {
   fromGatewayType: 'APIG_AI'; // Model API 只支持 APIG_AI 网关
 }
 
+// APISIX MCP Server 列表项
+export interface ApisixMCPItem {
+  routeId: string;
+  mcpServerName: string;
+  fromGatewayType: 'APISIX';
+}
+
+// APISIX Model API 列表项
+export interface ApisixModelItem {
+  routeId: string;
+  modelRouteName: string;
+  fromGatewayType: 'APISIX';
+}
+
 // Nacos Agent 列表项
 export interface NacosAgentItem {
   agentName: string;          // Agent 名称（唯一标识）
@@ -170,7 +184,7 @@ export interface NacosAgentItem {
   type: string;               // 显示类型，如 "Agent API (public)"
 }
 
-export type ApiItem = RestAPIItem | HigressMCPItem | APIGAIMCPItem | NacosMCPItem | AIGatewayAgentItem | AIGatewayModelItem | NacosAgentItem;
+export type ApiItem = RestAPIItem | HigressMCPItem | APIGAIMCPItem | NacosMCPItem | AIGatewayAgentItem | AIGatewayModelItem | NacosAgentItem | ApisixMCPItem | ApisixModelItem;
 
 // 关联服务配置
 export interface LinkedService {
@@ -183,6 +197,7 @@ export interface LinkedService {
   nacosRefConfig?: NacosMCPItem | NacosAgentItem;  // 扩展支持 Agent
   adpAIGatewayRefConfig?: APIGAIMCPItem;
   apsaraGatewayRefConfig?: APIGAIMCPItem;
+  apisixRefConfig?: ApisixMCPItem | ApisixModelItem;
 }
 
 // Product Feature Types
