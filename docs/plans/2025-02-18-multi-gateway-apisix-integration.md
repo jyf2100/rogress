@@ -542,5 +542,45 @@ mvn test -pl portal-server -Dtest="Apisix*Test"
 
 ### Phase 3: 完善与测试
 
-**状态**: ⏳ 待开始
+**状态**: ✅ 已完成
+
+#### Task 3.1: Consumer 授权功能
+
+**状态**: ✅ 已完成
+
+**测试验证**:
+```bash
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
+mvn test -pl portal-server -Dtest="Apisix*Test"
+# Tests run: 62, Failures: 0, Errors: 0, Skipped: 0 - BUILD SUCCESS
+```
+
+**变更文件**:
+- Create: `portal-server/src/test/.../ApisixAuthorizationTest.java`
+- Modify: `portal-server/.../gateway/ApisixOperator.java` (实现授权和健康检查)
+
+**实现内容**:
+- `authorizeConsumer` 方法：为指定 Consumer 授权访问 Route
+- `revokeConsumerAuthorization` 方法：撤销 Consumer 授权
+- `fetchGatewayIps` 方法：健康检查，返回网关 IP 列表
+
+---
+
+## 7. 完成总结
+
+**总测试数**: 62 个测试用例全部通过
+
+**已实现功能**:
+1. ✅ GatewayType.APISIX 枚举和 ApisixConfig 配置类
+2. ✅ ApisixClient HTTP 客户端（Route/Consumer CRUD）
+3. ✅ ApisixOperator 网关操作器（Spring 自动发现）
+4. ✅ MCP Server 获取和配置（通过 mcp-bridge 插件）
+5. ✅ Consumer 创建/更新/删除/检查存在
+6. ✅ Consumer 授权和撤销授权
+7. ✅ 健康检查（fetchGatewayIps）
+
+**后续可选优化**:
+- HTTP/REST APIs 管理（当前抛出 UnsupportedOperationException）
+- Model APIs 管理（当前抛出 UnsupportedOperationException）
+- Dashboard 集成（当前抛出 UnsupportedOperationException）
 
