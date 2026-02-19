@@ -19,12 +19,15 @@
 
 package com.alibaba.apiopenplatform.service.gateway;
 
+import cn.hutool.json.JSONUtil;
 import com.alibaba.apiopenplatform.dto.result.agent.AgentAPIResult;
+import com.alibaba.apiopenplatform.dto.result.common.DomainResult;
 import com.alibaba.apiopenplatform.dto.result.common.PageResult;
 import com.alibaba.apiopenplatform.dto.result.gateway.GatewayResult;
 import com.alibaba.apiopenplatform.dto.result.httpapi.APIResult;
 import com.alibaba.apiopenplatform.dto.result.mcp.ApisixMCPServerResult;
 import com.alibaba.apiopenplatform.dto.result.mcp.GatewayMCPServerResult;
+import com.alibaba.apiopenplatform.dto.result.mcp.MCPConfigResult;
 import com.alibaba.apiopenplatform.dto.result.model.GatewayModelAPIResult;
 import com.alibaba.apiopenplatform.entity.Consumer;
 import com.alibaba.apiopenplatform.entity.ConsumerCredential;
@@ -34,12 +37,14 @@ import com.alibaba.apiopenplatform.service.gateway.model.ApisixRoute;
 import com.alibaba.apiopenplatform.support.consumer.ConsumerAuthConfig;
 import com.alibaba.apiopenplatform.support.enums.GatewayType;
 import com.alibaba.apiopenplatform.support.gateway.GatewayConfig;
+import com.alibaba.apiopenplatform.support.product.ApisixRefConfig;
 import com.aliyun.sdk.service.apig20240327.models.HttpApiApiInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -108,8 +113,47 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
 
     @Override
     public String fetchMcpConfig(Gateway gateway, Object conf) {
-        // TODO: Phase 2 - 实现 mcp-bridge 配置获取
-        throw new UnsupportedOperationException("APISIX MCP config not implemented yet");
+        ApisixRefConfig refConfig = (ApisixRefConfig) conf;
+        ApisixClient client = getClient(gateway);
+
+        // 获取 Route 详情
+        ApisixRoute route = client.getRoute(refConfig.getRouteId());
+        if (route == null) {
+            throw new RuntimeException("Route not found: " + refConfig.getRouteId());
+        }
+
+        // 构建 MCP 配置结果
+        MCPConfigResult result = new MCPConfigResult();
+        result.setMcpServerName(refConfig.getMcpServerName());
+
+        // MCP Server 配置
+        MCPConfigResult.MCPServerConfig serverConfig = new MCPConfigResult.MCPServerConfig();
+        serverConfig.setPath(route.getUri());
+        serverConfig.setDomains(Collections.singletonList(
+                DomainResult.builder()
+                        .domain("<apisix-gateway-ip>")
+                        .protocol("http")
+                        .build()
+        ));
+        result.setMcpServerConfig(serverConfig);
+
+        // 解析 mcp-bridge 插件配置
+        if (route.hasMcpBridgePlugin()) {
+            Map<String, Object> mcpBridgeConfig = route.getMcpBridgeConfig();
+            if (mcpBridgeConfig != null) {
+                // 将 mcp-bridge 配置转为 JSON 字符串作为 tools
+                result.setTools(JSONUtil.toJsonStr(mcpBridgeConfig));
+            }
+        }
+
+        // 元数据
+        MCPConfigResult.McpMetadata meta = new MCPConfigResult.McpMetadata();
+        meta.setSource(GatewayType.APISIX.name());
+        meta.setCreateFromType("MCP_BRIDGE");
+        meta.setProtocol("SSE"); // mcp-bridge 默认使用 SSE
+        result.setMeta(meta);
+
+        return JSONUtil.toJsonStr(result);
     }
 
     @Override

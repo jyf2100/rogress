@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>HiMarket 仓库深度走读报告</title>
+  <style>:root{
+  --bg:#0b0f14; --panel:#0f1722; --text:#e6edf3; --muted:#9fb0c0;
+  --link:#6cb6ff; --border:#1f2a37; --code-bg:#0a0f16; --code-border:#1b2636;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#ffffff; --panel:#f6f8fa; --text:#1f2328; --muted:#57606a;
+    --link:#0969da; --border:#d0d7de; --code-bg:#f6f8fa; --code-border:#d0d7de;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+a{color:var(--link);text-decoration:none} a:hover{text-decoration:underline}
+.layout{display:grid;grid-template-columns:320px 1fr;min-height:100vh}
+.sidebar{border-right:1px solid var(--border);background:var(--panel);padding:18px 14px;position:sticky;top:0;height:100vh;overflow:auto}
+.content{padding:28px 34px;max-width:1100px}
+.brand{font-weight:700;margin-bottom:6px}
+.meta{color:var(--muted);font-size:12px;margin-bottom:14px}
+.toc{list-style:none;padding:0;margin:0}
+.toc-item{margin:6px 0}
+h1,h2,h3,h4,h5,h6{margin:22px 0 10px;line-height:1.25}
+h1{font-size:28px} h2{font-size:22px} h3{font-size:18px}
+p{margin:10px 0}
+blockquote{margin:12px 0;padding:10px 12px;border-left:4px solid var(--border);background:rgba(255,255,255,0.03)}
+pre{background:var(--code-bg);border:1px solid var(--code-border);padding:12px;border-radius:10px;overflow:auto}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:13px}
+ul{padding-left:22px}
+.muted{color:var(--muted)}
+@media (max-width: 980px){.layout{grid-template-columns:1fr}.sidebar{position:relative;height:auto}}</style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">HiMarket 仓库深度走读报告</div>
+      <div class="meta">Generated: 2026-02-18 19:55:04<br/><span class="muted">Offline, standalone</span></div>
+      <ul class="toc">
+<li class="toc-item" style="margin-left:0px"><a href="#himarket-仓库深度走读报告">HiMarket 仓库深度走读报告</a></li>
+<li class="toc-item" style="margin-left:12px"><a href="#目录">目录</a></li>
+<li class="toc-item" style="margin-left:12px"><a href="#执行摘要">执行摘要</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#项目定位">项目定位</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#核心价值">核心价值</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#技术栈概览">技术栈概览</a></li>
+<li class="toc-item" style="margin-left:12px"><a href="#phase-1-全局架构地图">Phase 1: 全局架构地图</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#11-顶层目录结构">1.1 顶层目录结构</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#12-模块职责划分">1.2 模块职责划分</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#13-模块依赖关系图">1.3 模块依赖关系图</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#14-装配点与入口点">1.4 装配点与入口点</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#15-api-路由概览">1.5 API 路由概览</a></li>
+<li class="toc-item" style="margin-left:12px"><a href="#phase-2-入口与执行流程">Phase 2: 入口与执行流程</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#21-网关服务请求流程">2.1 网关服务请求流程</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#22-ai-聊天服务执行流程">2.2 AI 聊天服务执行流程</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#23-关键入口点定位">2.3 关键入口点定位</a></li>
+<li class="toc-item" style="margin-left:12px"><a href="#phase-3-核心模块深挖">Phase 3: 核心模块深挖</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#31-网关操作器系统-gateway-operator-system">3.1 网关操作器系统 (Gateway Operator System)</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#32-llm-服务适配层">3.2 LLM 服务适配层</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#33-mcp-工具管理系统">3.3 MCP 工具管理系统</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#34-数据模型与存储层">3.4 数据模型与存储层</a></li>
+<li class="toc-item" style="margin-left:12px"><a href="#phase-4-上手实操与二次开发">Phase 4: 上手实操与二次开发</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#41-环境依赖">4.1 环境依赖</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#42-快速启动">4.2 快速启动</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#43-必要配置项">4.3 必要配置项</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#44-扩展开发指南">4.4 扩展开发指南</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#45-常见问题排查">4.5 常见问题排查</a></li>
+<li class="toc-item" style="margin-left:12px"><a href="#phase-5-仓库文档总结">Phase 5: 仓库文档总结</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#51-现有文档结构">5.1 现有文档结构</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#52-api-使用规范">5.2 API 使用规范</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#53-鼓励禁止的模式">5.3 鼓励/禁止的模式</a></li>
+<li class="toc-item" style="margin-left:12px"><a href="#phase-6-评分与改进建议">Phase 6: 评分与改进建议</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#61-评分维度-100-分制">6.1 评分维度 (100 分制)</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#62-总分">6.2 总分</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#63-top-改进建议">6.3 Top 改进建议</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#64-技术债务评估">6.4 技术债务评估</a></li>
+<li class="toc-item" style="margin-left:12px"><a href="#附录">附录</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#a-关键文件路径速查">A. 关键文件路径速查</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#b-依赖版本清单">B. 依赖版本清单</a></li>
+<li class="toc-item" style="margin-left:24px"><a href="#c-相关链接">C. 相关链接</a></li>
+</ul>
+      <hr style="border:0;border-top:1px solid var(--border);margin:16px 0"/>
+      <div class="muted" style="font-size:12px">
+        Tip: Mermaid blocks are kept as code fences for portability.
+      </div>
+    </aside>
+    <main class="content">
+      <h1 id="himarket-仓库深度走读报告">HiMarket 仓库深度走读报告</h1>
+<blockquote>
+<p>**生成日期**: 2026-02-18</p>
+<p>**仓库**: higress-group/himarket</p>
+<p>**版本**: main branch (commit: 9778638)</p>
+<p>**报告类型**: 完整深度走读 + 评分 + 改进建议</p>
+</blockquote>
+<p>---</p>
+<h2 id="目录">目录</h2>
+<p>1. <a href="#执行摘要">执行摘要</a> 2. <a href="#phase-1-全局架构地图">Phase 1: 全局架构地图</a> 3. <a href="#phase-2-入口与执行流程">Phase 2: 入口与执行流程</a> 4. <a href="#phase-3-核心模块深挖">Phase 3: 核心模块深挖</a> 5. <a href="#phase-4-上手实操与二次开发">Phase 4: 上手实操与二次开发</a> 6. <a href="#phase-5-仓库文档总结">Phase 5: 仓库文档总结</a> 7. <a href="#phase-6-评分与改进建议">Phase 6: 评分与改进建议</a> 8. <a href="#附录">附录</a></p>
+<p>---</p>
+<h2 id="执行摘要">执行摘要</h2>
+<h3 id="项目定位">项目定位</h3>
+<p>**HiMarket** 是基于 Higress AI 网关构建的**企业级 AI 开放平台**，旨在帮助企业构建私有 AI 能力市场，统一管理和分发 LLM、MCP Server、Agent 等 AI 资源。</p>
+<h3 id="核心价值">核心价值</h3>
+<p>| 维度 | 描述 | |------|------| | **资源管理** | 统一管理 MCP Server、Model、Agent 等 AI 资源 | | **产品化封装** | 将分散的 AI 能力封装为标准化的 API 产品 | | **开发者门户** | 提供自助式开发者门户，支持订阅和调用 | | **企业级能力** | 安全管控、观测分析、计量计费 |</p>
+<h3 id="技术栈概览">技术栈概览</h3>
+<pre><code class="code">┌─────────────────────────────────────────────────────────────┐
+│                      技术栈全景                              │
+├─────────────────────────────────────────────────────────────┤
+│  后端: Java 17 + Spring Boot 3.2 + Spring Data JPA + Flyway │
+│  前端: React 19 + TypeScript 5 + Ant Design 6 + Vite 6     │
+│  数据库: MySQL 8.0+ / MariaDB                               │
+│  缓存: Caffeine (本地缓存)                                   │
+│  AI框架: AgentScope 1.0.6 + DashScope SDK + OpenAI SDK     │
+│  网关集成: Higress + 阿里云 APIG + ADP AI Gateway           │
+│  部署: Docker Compose / Kubernetes Helm                     │
+│  CI/CD: GitHub Actions                                      │
+└─────────────────────────────────────────────────────────────┘</code></pre>
+<p>---</p>
+<h2 id="phase-1-全局架构地图">Phase 1: 全局架构地图</h2>
+<h3 id="11-顶层目录结构">1.1 顶层目录结构</h3>
+<pre><code class="code">/Volumes/work/workspace/himarket/
+├── .github/                    # GitHub 配置（CI/CD、Issue/PR 模板）
+├── .husky/                     # Git hooks（pre-commit）
+├── .mvn/                       # Maven wrapper 配置
+├── deploy/                     # 部署配置
+│   ├── docker/                 # Docker Compose 部署脚本
+│   └── helm/                   # Kubernetes Helm Chart 部署
+├── himarket-bootstrap/         # 应用启动模块（Spring Boot 入口）
+├── himarket-dal/               # 数据访问层（Entity、Repository、Converter）
+├── himarket-server/            # 业务逻辑层（Controller、Service、DTO、Core）
+├── himarket-web/               # 前端应用
+│   ├── himarket-admin/         # 管理后台前端
+│   └── himarket-frontend/      # 开发者门户前端
+├── pom.xml                     # Maven 父 POM
+└── docs/                       # 文档目录</code></pre>
+<h3 id="12-模块职责划分">1.2 模块职责划分</h3>
+<p>| 模块 | 职责 | 核心包 | |------|------|--------| | **himarket-bootstrap** | 应用启动入口、全局配置、过滤器 | <code>config/</code>, <code>filter/</code>, <code>HiMarketApplication.java</code> | | **himarket-dal** | 数据访问层、实体定义、Repository | <code>entity/</code>, <code>repository/</code>, <code>converter/</code>, <code>support/</code> | | **himarket-server** | 业务逻辑层、API 控制器、服务实现 | <code>controller/</code>, <code>service/</code>, <code>dto/</code>, <code>core/</code> | | **himarket-admin** | 管理后台前端 (React) | 管理员操作界面 | | **himarket-frontend** | 开发者门户前端 (React) | 开发者自助服务界面 |</p>
+<h3 id="13-模块依赖关系图">1.3 模块依赖关系图</h3>
+<pre class="mermaid">graph TB
+    subgraph &quot;前端层&quot;
+        ADMIN[himarket-admin&lt;br/&gt;管理后台]
+        FRONTEND[himarket-frontend&lt;br/&gt;开发者门户]
+    end
+
+    subgraph &quot;后端层&quot;
+        BOOTSTRAP[himarket-bootstrap&lt;br/&gt;启动模块]
+        SERVER[himarket-server&lt;br/&gt;业务逻辑]
+        DAL[himarket-dal&lt;br/&gt;数据访问]
+    end
+
+    subgraph &quot;基础设施&quot;
+        DB[(MySQL/MariaDB)]
+        CACHE[(Caffeine Cache)]
+        GATEWAY[Higress/APIG&lt;br/&gt;网关]
+    end
+
+    subgraph &quot;AI 服务&quot;
+        DASHSCOPE[阿里云 DashScope]
+        OPENAI[OpenAI API]
+        MCP[MCP Server]
+    end
+
+    ADMIN --&gt; BOOTSTRAP
+    FRONTEND --&gt; BOOTSTRAP
+    BOOTSTRAP --&gt; SERVER
+    SERVER --&gt; DAL
+    DAL --&gt; DB
+    SERVER --&gt; CACHE
+    SERVER --&gt; GATEWAY
+    SERVER --&gt; DASHSCOPE
+    SERVER --&gt; OPENAI
+    GATEWAY --&gt; MCP</pre>
+<h3 id="14-装配点与入口点">1.4 装配点与入口点</h3>
+<p>| 类型 | 位置 | 关键类/配置 | |------|------|-------------| | **应用入口** | <code>himarket-bootstrap/.../HiMarketApplication.java:26</code> | <code>@SpringBootApplication</code> | | **安全配置** | <code>himarket-bootstrap/.../config/SecurityConfig.java:43</code> | JWT 认证 + 白名单 | | **数据库迁移** | <code>himarket-bootstrap/.../resources/db/migration/</code> | Flyway V1-V6 | | **API 文档** | <code>himarket-bootstrap/.../config/SwaggerConfig.java</code> | OpenAPI 3.0 | | **过滤器链** | <code>himarket-bootstrap/.../filter/PortalResolvingFilter.java:38</code> | 门户域名解析 |</p>
+<h3 id="15-api-路由概览">1.5 API 路由概览</h3>
+<p>| 路由前缀 | 控制器 | 用途 | |----------|--------|------| | <code>/gateways</code> | GatewayController | 网关实例管理 | | <code>/products</code> | ProductController | API 产品管理 | | <code>/developers</code> | DeveloperController | 开发者管理 | | <code>/consumers</code> | ConsumerController | 消费者凭证管理 | | <code>/portals</code> | PortalController | 门户管理 | | <code>/chats</code> | ChatController | AI 聊天服务 (SSE) | | <code>/sessions</code> | SessionController | 聊天会话管理 | | <code>/admins</code> | AdministratorController | 管理员管理 |</p>
+<p>---</p>
+<h2 id="phase-2-入口与执行流程">Phase 2: 入口与执行流程</h2>
+<h3 id="21-网关服务请求流程">2.1 网关服务请求流程</h3>
+<pre class="mermaid">sequenceDiagram
+    participant Client as 客户端
+    participant Filter as PortalResolvingFilter
+    participant Security as SecurityFilterChain
+    participant JWT as JwtAuthenticationFilter
+    participant Controller as GatewayController
+    participant Service as GatewayServiceImpl
+    participant Operator as GatewayOperator
+    participant Client_SDK as GatewayClient
+    participant Gateway as 网关实例
+
+    Client-&gt;&gt;Filter: HTTP 请求
+    Filter-&gt;&gt;Filter: 解析域名 -&gt; 确定 Portal ID
+    Filter-&gt;&gt;Security: 传递请求
+    Security-&gt;&gt;Security: 检查白名单
+    Security-&gt;&gt;JWT: 验证 Token
+    JWT-&gt;&gt;JWT: 解析用户信息
+    JWT-&gt;&gt;Controller: 设置 SecurityContext
+    Controller-&gt;&gt;Service: 调用业务方法
+    Service-&gt;&gt;Service: 选择 GatewayOperator
+    Service-&gt;&gt;Operator: 执行操作
+    Operator-&gt;&gt;Client_SDK: 调用 SDK
+    Client_SDK-&gt;&gt;Gateway: API 调用
+    Gateway--&gt;&gt;Client_SDK: 响应
+    Client_SDK--&gt;&gt;Operator: 返回数据
+    Operator--&gt;&gt;Service: 处理结果
+    Service--&gt;&gt;Controller: 返回 DTO
+    Controller--&gt;&gt;Client: HTTP 响应</pre>
+<h3 id="22-ai-聊天服务执行流程">2.2 AI 聊天服务执行流程</h3>
+<pre class="mermaid">sequenceDiagram
+    participant User as 用户
+    participant Controller as ChatController
+    participant Service as ChatService
+    participant LLM as LlmService
+    participant BotManager as ChatBotManager
+    participant Agent as ReActAgent
+    participant MCP as MCP Client
+
+    User-&gt;&gt;Controller: POST /chats (SSE)
+    Controller-&gt;&gt;Service: chat(CreateChatParam)
+    Service-&gt;&gt;Service: performAllChecks() 权限验证
+    Service-&gt;&gt;Service: createChat() 创建聊天记录
+    Service-&gt;&gt;Service: buildInvokeModelParam()
+    Note over Service: buildHistoryMsgList()&lt;br/&gt;buildUserMsg()&lt;br/&gt;buildMCPConfigs()
+    Service-&gt;&gt;LLM: getLlmService() 协议匹配
+    LLM-&gt;&gt;BotManager: getOrCreateChatBot()
+    BotManager-&gt;&gt;BotManager: 创建 MCP 客户端
+    BotManager-&gt;&gt;BotManager: 注册 MCP 工具
+    BotManager-&gt;&gt;Agent: 构建 ReActAgent
+    LLM-&gt;&gt;Agent: chat() 流式执行
+    loop 工具调用循环
+        Agent-&gt;&gt;MCP: 调用 MCP 工具
+        MCP--&gt;&gt;Agent: 返回结果
+    end
+    Agent--&gt;&gt;LLM: Flux&lt;AgentEvent&gt;
+    LLM-&gt;&gt;Service: Flux&lt;ChatEvent&gt;
+    Service-&gt;&gt;Controller: Flux&lt;ChatEvent&gt;
+    Controller--&gt;&gt;User: SSE 流式响应</pre>
+<h3 id="23-关键入口点定位">2.3 关键入口点定位</h3>
+<h4 id="231-spring-boot-主入口">2.3.1 Spring Boot 主入口</h4>
+<p>**文件**: <code>himarket-bootstrap/src/main/java/com/alibaba/himarket/HiMarketApplication.java:26-33</code></p>
+<pre><code class="code language-java">@SpringBootApplication
+@EnableJpaAuditing
+public class HiMarketApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(HiMarketApplication.class, args);
+    }
+}</code></pre>
+<h4 id="232-网关服务入口">2.3.2 网关服务入口</h4>
+<p>**服务接口**: <code>himarket-server/src/main/java/com/alibaba/himarket/service/GatewayService.java:38-138</code></p>
+<p>**服务实现**: <code>himarket-server/src/main/java/com/alibaba/himarket/service/impl/GatewayServiceImpl.java:65-386</code></p>
+<h4 id="233-聊天服务入口">2.3.3 聊天服务入口</h4>
+<p>**控制器**: <code>himarket-server/src/main/java/com/alibaba/himarket/controller/ChatController.java:43-68</code></p>
+<p>**服务实现**: <code>himarket-server/src/main/java/com/alibaba/himarket/service/hichat/service/ChatService.java:65-66</code></p>
+<p>---</p>
+<h2 id="phase-3-核心模块深挖">Phase 3: 核心模块深挖</h2>
+<h3 id="31-网关操作器系统-gateway-operator-system">3.1 网关操作器系统 (Gateway Operator System)</h3>
+<h4 id="概念">概念</h4>
+<p>网关操作器是 HiMarket 与底层网关（Higress、APIG 等）交互的抽象层，采用**策略模式 + 工厂模式**实现多网关类型的统一管理。</p>
+<h4 id="代码定位">代码定位</h4>
+<p>| 组件 | 文件路径 | 行号 | |------|----------|------| | 抽象基类 | <code>himarket-server/.../service/gateway/GatewayOperator.java</code> | 30-150 | | APIG 实现 | <code>himarket-server/.../service/gateway/APIGOperator.java</code> | 35-400 | | Higress 实现 | <code>himarket-server/.../service/gateway/HigressOperator.java</code> | 30-350 |</p>
+<h4 id="核心数据结构">核心数据结构</h4>
+<pre><code class="code language-java">// 网关类型枚举
+public enum GatewayType {
+    APIG_API(&quot;API&quot;),           // 原生 API 网关
+    APIG_AI(&quot;AI&quot;),             // AI 网关
+    ADP_AI_GATEWAY,            // ADP AI 网关
+    APSARA_GATEWAY,            // Apsara AI 网关
+    HIGRESS(&quot;Higress&quot;);        // Higress 网关
+}
+
+// 网关实体
+@Entity
+@Table(name = &quot;gateway&quot;)
+public class Gateway extends BaseEntity {
+    private GatewayType gatewayType;
+    private APIGConfig apigConfig;       // JSON
+    private HigressConfig higressConfig; // JSON
+    // ...
+}</code></pre>
+<h4 id="关键流程">关键流程</h4>
+<pre><code class="code">1. 管理员导入网关 -&gt; GatewayController.importGateway()
+2. 服务层选择操作器 -&gt; GatewayServiceImpl.selectOperator(gatewayType)
+3. 操作器执行操作 -&gt; operator.fetchMcpServers() / fetchModelAPIs()
+4. 结果封装返回 -&gt; PageResult&lt;APIResult&gt;</code></pre>
+<h4 id="扩展点">扩展点</h4>
+<p>新增网关类型需要： 1. 在 <code>GatewayType</code> 枚举添加新类型 2. 创建 <code>NewGatewayConfig</code> 配置类 3. 实现 <code>GatewayOperator</code> 抽象类 4. Spring 自动发现并注册</p>
+<h3 id="32-llm-服务适配层">3.2 LLM 服务适配层</h3>
+<h4 id="概念-2">概念</h4>
+<p>LLM 服务适配层负责与不同 AI 模型提供商（DashScope、OpenAI 等）的集成，支持流式响应和工具调用。</p>
+<h4 id="代码定位-2">代码定位</h4>
+<p>| 组件 | 文件路径 | 行号 | |------|----------|------| | 服务接口 | <code>himarket-server/.../service/hichat/service/LlmService.java</code> | 30-55 | | 抽象基类 | <code>himarket-server/.../service/hichat/service/AbstractLlmService.java</code> | 47-296 | | DashScope 实现 | <code>himarket-server/.../service/hichat/service/DashScopeLlmService.java</code> | 39-91 | | OpenAI 实现 | <code>himarket-server/.../service/hichat/service/OpenAILlmService.java</code> | 25-100 |</p>
+<h4 id="核心数据结构-2">核心数据结构</h4>
+<pre><code class="code language-java">// AI 协议枚举
+public enum AIProtocol {
+    OPENAI(&quot;OpenAI/V1&quot;),
+    ANTHROPIC(&quot;Anthropic&quot;),
+    DASHSCOPE(&quot;DashScope&quot;),
+    DASHSCOPE_IMAGE(&quot;DashScopeImage&quot;);
+}
+
+// 聊天事件类型
+public enum EventType {
+    START,        // 流开始
+    ASSISTANT,    // 助手响应文本
+    THINKING,     // 思考/推理过程
+    TOOL_CALL,    // 工具调用
+    TOOL_RESULT,  // 工具执行结果
+    DONE,         // 流结束
+    ERROR         // 错误
+}</code></pre>
+<h4 id="关键流程-2">关键流程</h4>
+<pre><code class="code">1. 请求参数构建 -&gt; ChatService.buildInvokeModelParam()
+2. 协议匹配 -&gt; getLlmService().match(protocol)
+3. 模型创建 -&gt; AbstractLlmService.newChatModel() [抽象方法]
+4. ChatBot 获取 -&gt; ChatBotManager.getOrCreateChatBot()
+5. 流式执行 -&gt; ChatBot.chat() -&gt; Flux&lt;ChatEvent&gt;</code></pre>
+<h3 id="33-mcp-工具管理系统">3.3 MCP 工具管理系统</h3>
+<h4 id="概念-3">概念</h4>
+<p>MCP (Model Context Protocol) 工具管理系统负责与 MCP Server 的连接、工具注册和调用。</p>
+<h4 id="代码定位-3">代码定位</h4>
+<p>| 组件 | 文件路径 | 行号 | |------|----------|------| | 工具管理器 | <code>himarket-server/.../service/hichat/manager/ToolManager.java</code> | 49-318 | | ChatBot 管理器 | <code>himarket-server/.../service/hichat/manager/ChatBotManager.java</code> | 59-520 | | ChatBot 实体 | <code>himarket-server/.../service/hichat/support/ChatBot.java</code> | 19-86 |</p>
+<h4 id="核心数据结构-3">核心数据结构</h4>
+<pre><code class="code language-java">// MCP 传输配置
+@Data
+@Builder
+public class MCPTransportConfig {
+    private String mcpServerName;
+    private MCPTransportMode transportMode;  // SSE / STREAMABLE_HTTP
+    private String url;
+    private Map&lt;String, String&gt; headers;     // 认证头
+    private Map&lt;String, String&gt; queryParams; // 查询参数
+}
+
+// 传输模式
+public enum MCPTransportMode {
+    STDIO(&quot;stdio&quot;),
+    SSE(&quot;sse&quot;),
+    STREAMABLE_HTTP(&quot;StreamableHTTP&quot;);
+}</code></pre>
+<h4 id="关键流程-3">关键流程</h4>
+<pre class="mermaid">flowchart LR
+    A[获取 MCP 配置] --&gt; B[ToolManager.getOrCreateClient]
+    B --&gt; C{传输模式}
+    C --&gt;|SSE| D[SSE Transport]
+    C --&gt;|HTTP| E[StreamableHTTP Transport]
+    D --&gt; F[McpClientWrapper]
+    E --&gt; F
+    F --&gt; G[initialize]
+    G --&gt; H[注册到 Toolkit]
+    H --&gt; I[ReActAgent 使用]</pre>
+<h3 id="34-数据模型与存储层">3.4 数据模型与存储层</h3>
+<h4 id="概念-4">概念</h4>
+<p>使用 Spring Data JPA 实现数据持久化，Flyway 管理数据库迁移，大量使用 JSON 字段存储复杂配置。</p>
+<h4 id="核心实体关系">核心实体关系</h4>
+<pre class="mermaid">erDiagram
+    Administrator ||--o{ Portal : manages
+    Administrator ||--o{ Gateway : owns
+    Administrator ||--o{ Product : creates
+    Administrator ||--o{ NacosInstance : configures
+
+    Portal ||--o{ PortalDomain : has
+    Portal ||--o{ Developer : registers
+    Portal ||--o{ ProductPublication : publishes
+
+    Developer ||--o{ Consumer : creates
+    Developer ||--o{ ChatSession : owns
+    Developer ||--o{ DeveloperExternalIdentity : has
+
+    Consumer ||--|| ConsumerCredential : has
+    Consumer ||--o{ ConsumerRef : references
+    Consumer ||--o{ ProductSubscription : subscribes
+
+    Product ||--o{ ProductRef : references
+    Product ||--o{ ProductCategoryRelation : belongs_to
+    Product ||--o{ ProductPublication : published_as
+    Product ||--o{ ProductSubscription : subscribed_by
+
+    ChatSession ||--o{ Chat : contains
+    Chat ||--o{ ChatAttachment : has</pre>
+<h4 id="json-字段使用">JSON 字段使用</h4>
+<p>| 实体 | JSON 字段 | 用途 | |------|-----------|------| | Product | icon, feature, document | 产品图标、特性、文档 | | Gateway | apigConfig, higressConfig | 网关配置 | | ConsumerCredential | apikeyConfig, hmacConfig, jwtConfig | 认证配置 | | Chat | attachments, chatUsage, toolCalls | 聊天元数据 |</p>
+<p>---</p>
+<h2 id="phase-4-上手实操与二次开发">Phase 4: 上手实操与二次开发</h2>
+<h3 id="41-环境依赖">4.1 环境依赖</h3>
+<p>| 依赖 | 版本要求 | 用途 | |------|----------|------| | JDK | 17+ | 后端运行时 | | Node.js | 18+ | 前端构建 | | Maven | 3.6+ | 后端构建 | | MySQL | 8.0+ / MariaDB | 数据库 |</p>
+<h3 id="42-快速启动">4.2 快速启动</h3>
+<h4 id="方式一本地开发环境">方式一：本地开发环境</h4>
+<pre><code class="code language-bash"># 1. 构建后端
+mvn clean package -DskipTests
+
+# 2. 启动后端服务
+java --add-opens java.base/java.util=ALL-UNNAMED \
+     --add-opens java.base/java.lang=ALL-UNNAMED \
+     -Ddb.host=${DB_HOST} \
+     -Ddb.port=${DB_PORT} \
+     -Ddb.name=${DB_NAME} \
+     -Ddb.username=${DB_USERNAME} \
+     -Ddb.password=${DB_PASSWORD} \
+     -jar himarket-bootstrap/target/himarket-bootstrap-1.0-SNAPSHOT.jar
+
+# 3. 启动管理后台前端
+cd himarket-web/himarket-admin
+npm install &amp;&amp; npm run dev
+# 访问: http://localhost:5174
+
+# 4. 启动开发者门户前端
+cd himarket-web/himarket-frontend
+npm install &amp;&amp; npm run dev
+# 访问: http://localhost:5173</code></pre>
+<h4 id="方式二docker-compose">方式二：Docker Compose</h4>
+<pre><code class="code language-bash">cd deploy/docker/scripts
+./deploy.sh install
+# 管理后台: http://localhost:5174
+# 开发者门户: http://localhost:5173
+# 后端 API: http://localhost:8081</code></pre>
+<h3 id="43-必要配置项">4.3 必要配置项</h3>
+<p>| 配置项 | 环境变量 | 说明 | |--------|----------|------| | 数据库地址 | <code>db.host</code> | MySQL/MariaDB 主机 | | 数据库端口 | <code>db.port</code> | 默认 3306 | | 数据库名 | <code>db.name</code> | 数据库名称 | | 数据库用户 | <code>db.username</code> | 用户名 | | 数据库密码 | <code>db.password</code> | 密码 |</p>
+<h3 id="44-扩展开发指南">4.4 扩展开发指南</h3>
+<h4 id="新增网关类型">新增网关类型</h4>
+<pre><code class="code language-java">// 1. 在 GatewayType 枚举中添加
+public enum GatewayType {
+    // 现有类型...
+    NEW_GATEWAY(&quot;NewGateway&quot;);
+}
+
+// 2. 创建配置类
+@Data
+public class NewGatewayConfig {
+    private String endpoint;
+    private String apiKey;
+}
+
+// 3. 实现 GatewayOperator
+@Service
+public class NewGatewayOperator extends GatewayOperator&lt;NewGatewayClient&gt; {
+
+    @Override
+    public GatewayType getGatewayType() {
+        return GatewayType.NEW_GATEWAY;
+    }
+
+    @Override
+    public PageResult&lt;APIResult&gt; fetchRESTAPIs(Gateway gateway, int page, int size) {
+        // 实现具体的 API 获取逻辑
+    }
+
+    // 实现其他抽象方法...
+}</code></pre>
+<h4 id="新增-llm-服务提供商">新增 LLM 服务提供商</h4>
+<pre><code class="code language-java">// 1. 在 AIProtocol 枚举中添加
+public enum AIProtocol {
+    // 现有协议...
+    NEW_LLM(&quot;NewLLM/v1&quot;);
+}
+
+// 2. 实现 LlmService
+@Service
+public class NewLLMService extends AbstractLlmService {
+
+    public NewLLMService(GatewayService gatewayService, ChatBotManager chatBotManager) {
+        super(gatewayService, chatBotManager);
+    }
+
+    @Override
+    public Model newChatModel(LlmChatRequest request) {
+        return NewLLMModel.builder()
+            .apiKey(request.getApiKey())
+            .baseUrl(request.getUri().toString())
+            .build();
+    }
+
+    @Override
+    public List&lt;AIProtocol&gt; getProtocols() {
+        return List.of(AIProtocol.NEW_LLM);
+    }
+}</code></pre>
+<h4 id="新增-mcp-传输模式">新增 MCP 传输模式</h4>
+<pre><code class="code language-java">// 1. 在 MCPTransportMode 枚举中添加
+public enum MCPTransportMode {
+    // 现有模式...
+    WEBSOCKET(&quot;websocket&quot;);
+}
+
+// 2. 更新 ToolManager.createClient()
+switch (config.getTransportMode()) {
+    case SSE:
+        builder.sseTransport(config.getUrl());
+        break;
+    case STREAMABLE_HTTP:
+        builder.streamableHttpTransport(config.getUrl());
+        break;
+    case WEBSOCKET:
+        builder.websocketTransport(config.getUrl());
+        break;
+}</code></pre>
+<h3 id="45-常见问题排查">4.5 常见问题排查</h3>
+<p>| 问题 | 可能原因 | 解决方案 | |------|----------|----------| | 数据库连接失败 | 配置错误/网络问题 | 检查 db.* 配置项 | | JWT Token 无效 | Token 过期/被撤销 | 检查 Token 有效期配置 | | MCP 工具调用失败 | 网络超时/认证失败 | 检查 MCP Server 配置 | | SSE 流中断 | 超时设置过短 | 调整 SseEmitter 超时配置 | | Flyway 迁移失败 | 版本冲突 | 检查迁移脚本版本号 |</p>
+<p>---</p>
+<h2 id="phase-5-仓库文档总结">Phase 5: 仓库文档总结</h2>
+<h3 id="51-现有文档结构">5.1 现有文档结构</h3>
+<p>| 文档 | 路径 | 内容 | |------|------|------| | README | <code>/README_zh.md</code> | 项目介绍、架构说明、快速开始 | | 用户指南 | <code>/USER_GUIDE_zh.md</code> | 管理后台和开发者门户使用教程 | | 贡献指南 | <code>/CONTRIBUTING_zh.md</code> | 开发流程、代码规范、PR 规范 | | Docker 部署 | <code>/deploy/docker/Docker部署脚本说明.md</code> | Docker Compose 部署指南 | | Helm 部署 | <code>/deploy/helm/Helm部署脚本说明.md</code> | Kubernetes 部署指南 |</p>
+<h3 id="52-api-使用规范">5.2 API 使用规范</h3>
+<h4 id="认证方式">认证方式</h4>
+<ul>
+<li>**管理员**: <code>@AdminAuth</code> -&gt; <code>hasRole(&#x27;ADMIN&#x27;)</code></li>
+<li>**开发者**: <code>@DeveloperAuth</code> -&gt; <code>hasRole(&#x27;DEVELOPER&#x27;)</code></li>
+<li>**混合**: <code>@AdminOrDeveloperAuth</code></li>
+</ul>
+<h4 id="请求格式">请求格式</h4>
+<pre><code class="code language-json">// POST /products
+{
+  &quot;name&quot;: &quot;产品名称&quot;,
+  &quot;type&quot;: &quot;MODEL_API&quot;,
+  &quot;description&quot;: &quot;产品描述&quot;,
+  &quot;categoryId&quot;: &quot;分类ID&quot;
+}</code></pre>
+<h4 id="响应格式">响应格式</h4>
+<pre><code class="code language-json">// 成功响应
+{
+  &quot;code&quot;: 200,
+  &quot;message&quot;: &quot;success&quot;,
+  &quot;data&quot;: { ... }
+}
+
+// 错误响应
+{
+  &quot;code&quot;: 40001,
+  &quot;message&quot;: &quot;Business error message&quot;,
+  &quot;data&quot;: null
+}</code></pre>
+<h3 id="53-鼓励禁止的模式">5.3 鼓励/禁止的模式</h3>
+<h4 id="鼓励">鼓励</h4>
+<ul>
+<li>使用 Spring 自动注入（<code>@RequiredArgsConstructor</code>）</li>
+<li>遵循 Conventional Commits 规范</li>
+<li>提交前运行 <code>mvn spotless:apply</code></li>
+<li>使用 Flyway 管理数据库变更</li>
+<li>使用 JPA AttributeConverter 处理 JSON 字段</li>
+</ul>
+<h4 id="禁止">禁止</h4>
+<ul>
+<li>硬编码敏感信息（密钥、密码）</li>
+<li>跳过代码格式化检查</li>
+<li>直接修改生产数据库</li>
+<li>在 DTO 中暴露实体类</li>
+</ul>
+<p>---</p>
+<h2 id="phase-6-评分与改进建议">Phase 6: 评分与改进建议</h2>
+<h3 id="61-评分维度-100-分制">6.1 评分维度 (100 分制)</h3>
+<p>| 维度 | 分数 | 依据 | |------|------|------| | **架构设计** | 85/100 | 分层清晰、策略模式应用得当、扩展性强 | | **代码质量** | 75/100 | 代码格式统一、但缺少单元测试 | | **文档完整性** | 80/100 | 用户文档完善、API 文档齐全、缺少架构文档 | | **可扩展性** | 90/100 | 网关/LLM/MCP 扩展点设计优秀 | | **安全性** | 80/100 | JWT 认证、敏感数据加密、白名单机制 | | **可观测性** | 70/100 | 基础日志、缺少分布式追踪和监控集成 | | **测试覆盖** | 40/100 | **严重不足**，无单元测试文件 | | **部署友好度** | 85/100 | Docker/Helm 部署脚本完善 |</p>
+<h3 id="62-总分">6.2 总分</h3>
+<pre><code class="code">总分: 75.6 / 100</code></pre>
+<h3 id="63-top-改进建议">6.3 Top 改进建议</h3>
+<h4 id="高优先级">高优先级</h4>
+<p>| # | 建议 | 影响 | 成本 | |---|------|------|------| | 1 | **添加单元测试** | 高 | 中 | | 2 | **增加集成测试** | 高 | 中 | | 3 | **添加 API 契约测试** | 中 | 低 |</p>
+<p>**详细说明**:</p>
+<pre><code class="code language-bash"># 建议的测试目录结构
+himarket-server/src/test/java/
+├── unit/                    # 单元测试
+│   ├── service/
+│   └── controller/
+├── integration/             # 集成测试
+│   └── api/
+└── contract/                # 契约测试
+    └── openapi/</code></pre>
+<h4 id="中优先级">中优先级</h4>
+<p>| # | 建议 | 影响 | 成本 | |---|------|------|------| | 4 | 添加分布式追踪 (OpenTelemetry) | 中 | 中 | | 5 | 完善 API 错误码文档 | 中 | 低 | | 6 | 添加健康检查端点详情 | 低 | 低 |</p>
+<h4 id="低优先级">低优先级</h4>
+<p>| # | 建议 | 影响 | 成本 | |---|------|------|------| | 7 | 生成架构决策记录 (ADR) | 低 | 低 | | 8 | 添加性能基准测试 | 低 | 高 |</p>
+<h3 id="64-技术债务评估">6.4 技术债务评估</h3>
+<p>| 类型 | 描述 | 风险等级 | |------|------|----------| | 测试缺失 | 无自动化测试覆盖 | **高** | | 缓存一致性 | 本地缓存不支持分布式 | 中 | | 日志规范 | 缺少结构化日志 | 低 |</p>
+<p>---</p>
+<h2 id="附录">附录</h2>
+<h3 id="a-关键文件路径速查">A. 关键文件路径速查</h3>
+<p>| 类别 | 文件路径 | |------|----------| | **主入口** | <code>himarket-bootstrap/src/main/java/com/alibaba/himarket/HiMarketApplication.java</code> | | **安全配置** | <code>himarket-bootstrap/src/main/java/com/alibaba/himarket/config/SecurityConfig.java</code> | | **网关服务** | <code>himarket-server/src/main/java/com/alibaba/himarket/service/impl/GatewayServiceImpl.java</code> | | **聊天服务** | <code>himarket-server/src/main/java/com/alibaba/himarket/service/hichat/service/ChatService.java</code> | | **LLM 抽象** | <code>himarket-server/src/main/java/com/alibaba/himarket/service/hichat/service/AbstractLlmService.java</code> | | **网关操作器** | <code>himarket-server/src/main/java/com/alibaba/himarket/service/gateway/GatewayOperator.java</code> | | **实体定义** | <code>himarket-dal/src/main/java/com/alibaba/himarket/entity/</code> | | **数据库迁移** | <code>himarket-bootstrap/src/main/resources/db/migration/</code> |</p>
+<h3 id="b-依赖版本清单">B. 依赖版本清单</h3>
+<p>| 依赖 | 版本 | |------|------| | Spring Boot | 3.2.11 | | Java | 17 | | AgentScope | 1.0.6 | | DashScope SDK | 2.22.4 | | OpenAI Java | 4.6.1 | | React | 19.0.0 | | Ant Design | 6.0.1 | | Vite | 6.4.x |</p>
+<h3 id="c-相关链接">C. 相关链接</h3>
+<ul>
+<li><a href="https://github.com/higress-group/himarket">项目仓库</a></li>
+<li><a href="./USER_GUIDE_zh.md">用户指南</a></li>
+<li><a href="./CONTRIBUTING_zh.md">贡献指南</a></li>
+<li><a href="https://higress.io/">Higress 官网</a></li>
+</ul>
+<p>---</p>
+<blockquote>
+<p>**报告生成工具**: Claude Code + repo-deep-dive-report skill</p>
+<p>**分析深度**: Full (6 Phases)</p>
+<p>**图表引擎**: Mermaid</p>
+</blockquote>
+    </main>
+  </div>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  mermaid.run({ querySelector: ".mermaid" });
+</script>
+</body>
+</html>

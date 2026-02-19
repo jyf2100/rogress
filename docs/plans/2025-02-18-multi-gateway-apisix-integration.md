@@ -495,5 +495,27 @@ mvn test -pl portal-server -Dtest="Apisix*Test"
 
 ### Phase 2 Task 2.2: MCP Server CRUD
 
+**状态**: ✅ 已完成
+
+**测试验证**:
+```bash
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
+mvn test -pl portal-server -Dtest="Apisix*Test"
+# Tests run: 46, Failures: 0, Errors: 0, Skipped: 0 - BUILD SUCCESS
+```
+
+**变更文件**:
+- Create: `portal-dal/.../product/ApisixRefConfig.java`
+- Create: `portal-server/src/test/.../ApisixMcpConfigTest.java`
+- Modify: `portal-server/.../gateway/ApisixOperator.java` (实现 fetchMcpConfig)
+
+**实现内容**:
+- ApisixRefConfig 配置类（routeId, mcpServerName, modelRouteName）
+- fetchMcpConfig 实现：从 Route 获取 mcp-bridge 配置并转换为 MCPConfigResult
+
+---
+
+### Phase 2 Task 2.3: Consumer 管理
+
 **状态**: ⏳ 待开始
 
