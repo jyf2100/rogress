@@ -27,7 +27,8 @@ import lombok.Data;
         oneOf = {
                 APIGMCPServerResult.class,
                 HigressMCPServerResult.class,
-                AdpMCPServerResult.class
+                AdpMCPServerResult.class,
+                ApisixMCPServerResult.class
         },
         discriminatorProperty = "type"
 )

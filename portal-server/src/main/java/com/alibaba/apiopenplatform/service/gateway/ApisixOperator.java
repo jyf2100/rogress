@@ -23,12 +23,14 @@ import com.alibaba.apiopenplatform.dto.result.agent.AgentAPIResult;
 import com.alibaba.apiopenplatform.dto.result.common.PageResult;
 import com.alibaba.apiopenplatform.dto.result.gateway.GatewayResult;
 import com.alibaba.apiopenplatform.dto.result.httpapi.APIResult;
+import com.alibaba.apiopenplatform.dto.result.mcp.ApisixMCPServerResult;
 import com.alibaba.apiopenplatform.dto.result.mcp.GatewayMCPServerResult;
 import com.alibaba.apiopenplatform.dto.result.model.GatewayModelAPIResult;
 import com.alibaba.apiopenplatform.entity.Consumer;
 import com.alibaba.apiopenplatform.entity.ConsumerCredential;
 import com.alibaba.apiopenplatform.entity.Gateway;
 import com.alibaba.apiopenplatform.service.gateway.client.ApisixClient;
+import com.alibaba.apiopenplatform.service.gateway.model.ApisixRoute;
 import com.alibaba.apiopenplatform.support.consumer.ConsumerAuthConfig;
 import com.alibaba.apiopenplatform.support.enums.GatewayType;
 import com.alibaba.apiopenplatform.support.gateway.GatewayConfig;
@@ -38,6 +40,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * APISIX 网关操作器
@@ -65,8 +68,26 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
 
     @Override
     public PageResult<? extends GatewayMCPServerResult> fetchMcpServers(Gateway gateway, int page, int size) {
-        // TODO: Phase 2 - 实现 mcp-bridge 插件配置获取
-        throw new UnsupportedOperationException("APISIX MCP servers not implemented yet");
+        ApisixClient client = getClient(gateway);
+
+        // 获取所有 Route，筛选带 mcp-bridge 插件的
+        List<ApisixRoute> routes = client.listRoutes();
+
+        List<ApisixMCPServerResult> mcpServers = routes.stream()
+                .filter(ApisixRoute::hasMcpBridgePlugin)
+                .map(route -> new ApisixMCPServerResult().convertFrom(route))
+                .collect(Collectors.toList());
+
+        // 分页处理
+        int total = mcpServers.size();
+        int fromIndex = (page - 1) * size;
+        int toIndex = Math.min(fromIndex + size, total);
+
+        if (fromIndex >= total) {
+            return PageResult.of(Collections.emptyList(), page, size, total);
+        }
+
+        return PageResult.of(mcpServers.subList(fromIndex, toIndex), page, size, total);
     }
 
     @Override

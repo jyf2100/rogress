@@ -20,13 +20,17 @@
 package com.alibaba.apiopenplatform.service.gateway.client;
 
 import com.alibaba.apiopenplatform.service.gateway.factory.HTTPClientFactory;
+import com.alibaba.apiopenplatform.service.gateway.model.ApisixRoute;
 import com.alibaba.apiopenplatform.support.gateway.ApisixConfig;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -167,5 +171,191 @@ public class ApisixClient extends GatewayClient {
     @Override
     public void close() {
         HTTPClientFactory.closeClient(restTemplate);
+    }
+
+    // ==================== Route 管理 API ====================
+
+    /**
+     * 获取所有路由列表
+     *
+     * @return 路由列表
+     */
+    public List<ApisixRoute> listRoutes() {
+        ApisixListResponse<ApisixRouteData> response = execute(
+                "/routes",
+                HttpMethod.GET,
+                null,
+                null,
+                new ParameterizedTypeReference<ApisixListResponse<ApisixRouteData>>() {}
+        );
+
+        if (response == null || response.getList() == null) {
+            return new ArrayList<>();
+        }
+
+        return response.getList().getNodes().stream()
+                .map(node -> {
+                    ApisixRoute route = convertToRoute(node.getValue());
+                    route.setId(extractIdFromKey(node.getKey()));
+                    return route;
+                })
+                .toList();
+    }
+
+    /**
+     * 将 ApisixRouteData 转换为 ApisixRoute
+     */
+    private ApisixRoute convertToRoute(ApisixRouteData data) {
+        ApisixRoute route = new ApisixRoute();
+        route.setId(data.getId());
+        route.setName(data.getName());
+        route.setUri(data.getUri());
+        route.setUris(data.getUris());
+        route.setMethods(data.getMethods());
+        route.setPlugins(data.getPlugins());
+        route.setUpstream(data.getUpstream());
+        route.setStatus(data.getStatus());
+        return route;
+    }
+
+    /**
+     * 获取单个路由详情
+     *
+     * @param routeId 路由 ID
+     * @return 路由详情
+     */
+    public ApisixRoute getRoute(String routeId) {
+        ApisixResponse<ApisixRoute> response = execute(
+                "/routes/" + routeId,
+                HttpMethod.GET,
+                null,
+                null,
+                new ParameterizedTypeReference<ApisixResponse<ApisixRoute>>() {}
+        );
+
+        if (response == null) {
+            return null;
+        }
+
+        ApisixRoute route = response.getValue();
+        if (route != null) {
+            route.setId(routeId);
+        }
+        return route;
+    }
+
+    /**
+     * 创建路由
+     *
+     * @param routeId 路由 ID
+     * @param route 路由配置
+     * @return 创建的路由
+     */
+    public ApisixRoute createRoute(String routeId, ApisixRoute route) {
+        execute(
+                "/routes/" + routeId,
+                HttpMethod.PUT,
+                null,
+                route,
+                Void.class
+        );
+        return getRoute(routeId);
+    }
+
+    /**
+     * 更新路由
+     *
+     * @param routeId 路由 ID
+     * @param route 路由配置
+     * @return 更新后的路由
+     */
+    public ApisixRoute updateRoute(String routeId, ApisixRoute route) {
+        execute(
+                "/routes/" + routeId,
+                HttpMethod.PUT,
+                null,
+                route,
+                Void.class
+        );
+        return getRoute(routeId);
+    }
+
+    /**
+     * 删除路由
+     *
+     * @param routeId 路由 ID
+     */
+    public void deleteRoute(String routeId) {
+        execute(
+                "/routes/" + routeId,
+                HttpMethod.DELETE,
+                null,
+                null,
+                Void.class
+        );
+    }
+
+    // ==================== 辅助方法 ====================
+
+    /**
+     * 从 key 中提取 ID
+     * 例如: /apisix/routes/route_id -> route_id
+     */
+    private String extractIdFromKey(String key) {
+        if (key == null) {
+            return null;
+        }
+        String[] parts = key.split("/");
+        return parts.length > 0 ? parts[parts.length - 1] : key;
+    }
+
+    // ==================== 响应模型类 ====================
+
+    /**
+     * APISIX 列表响应
+     */
+    @Data
+    public static class ApisixListResponse<T> {
+        private ApisixListNode<T> list;
+    }
+
+    /**
+     * APISIX 列表节点
+     */
+    @Data
+    public static class ApisixListNode<T> {
+        private List<ApisixNode<T>> nodes;
+    }
+
+    /**
+     * APISIX 节点
+     */
+    @Data
+    public static class ApisixNode<T> {
+        private String key;
+        private T value;
+    }
+
+    /**
+     * APISIX 单项响应
+     */
+    @Data
+    public static class ApisixResponse<T> {
+        private T value;
+    }
+
+    /**
+     * 路由数据（用于列表响应）
+     */
+    @Data
+    public static class ApisixRouteData {
+        private String id;
+        private String name;
+        private String uri;
+        private List<String> uris;
+        private List<String> methods;
+        private Map<String, Object> plugins;
+        private Map<String, Object> upstream;
+        private Boolean status;
     }
 }

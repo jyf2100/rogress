@@ -468,5 +468,32 @@ mvn test -pl portal-server -Dtest="Apisix*Test"
 
 ### Phase 2 Task 2.1: 实现 mcp-bridge 配置
 
+**状态**: ✅ 已完成
+
+**测试验证**:
+```bash
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
+mvn test -pl portal-server -Dtest="Apisix*Test"
+# Tests run: 42, Failures: 0, Errors: 0, Skipped: 0 - BUILD SUCCESS
+```
+
+**变更文件**:
+- Create: `portal-server/.../gateway/model/ApisixRoute.java`
+- Create: `portal-dal/.../result/mcp/ApisixMCPServerResult.java`
+- Create: `portal-server/src/test/.../ApisixMcpTest.java`
+- Modify: `portal-server/.../gateway/client/ApisixClient.java` (添加 Route API)
+- Modify: `portal-server/.../gateway/ApisixOperator.java` (实现 fetchMcpServers)
+- Modify: `portal-dal/.../result/mcp/GatewayMCPServerResult.java` (添加 ApisixMCPServerResult)
+
+**实现内容**:
+- ApisixRoute 模型类表示 APISIX Route 对象
+- ApisixMCPServerResult 继承 GatewayMCPServerResult
+- ApisixClient 添加 listRoutes/getRoute/createRoute/updateRoute/deleteRoute 方法
+- fetchMcpServers 实现从 Route 列表中筛选 mcp-bridge 插件
+
+---
+
+### Phase 2 Task 2.2: MCP Server CRUD
+
 **状态**: ⏳ 待开始
 
