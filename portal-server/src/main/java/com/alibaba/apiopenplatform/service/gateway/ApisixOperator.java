@@ -20,6 +20,8 @@
 package com.alibaba.apiopenplatform.service.gateway;
 
 import cn.hutool.json.JSONUtil;
+import com.alibaba.apiopenplatform.core.exception.BusinessException;
+import com.alibaba.apiopenplatform.core.exception.ErrorCode;
 import com.alibaba.apiopenplatform.dto.result.agent.AgentAPIResult;
 import com.alibaba.apiopenplatform.dto.result.common.DomainResult;
 import com.alibaba.apiopenplatform.dto.result.common.PageResult;
@@ -154,7 +156,7 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
 
     @Override
     public PageResult<AgentAPIResult> fetchAgentAPIs(Gateway gateway, int page, int size) {
-        return null;
+        throw new BusinessException(ErrorCode.INVALID_REQUEST, "APISIX 暂不支持 Agent API");
     }
 
     @Override
@@ -279,7 +281,7 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
 
     @Override
     public String fetchAgentConfig(Gateway gateway, Object conf) {
-        return "";
+        throw new BusinessException(ErrorCode.INVALID_REQUEST, "APISIX 暂不支持 Agent API");
     }
 
     @Override

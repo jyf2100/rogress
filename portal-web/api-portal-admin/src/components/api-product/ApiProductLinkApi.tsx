@@ -461,7 +461,7 @@ export function ApiProductLinkApi({ apiProduct, linkedService, onLinkedServiceUp
           setApiList(modelApis)
         } else if (apiProduct.type === 'REST_API') {
           // APISIX类型 + REST API产品：获取HTTP API列表
-          const res = await gatewayApi.getGatewayHttpApis(gatewayId, {
+          const res = await gatewayApi.getGatewayRestApis(gatewayId, {
             page: 1,
             size: 1000
           })

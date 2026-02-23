@@ -98,13 +98,14 @@ class ApisixOperatorTest {
     }
 
     /**
-     * 测试 fetchAgentAPIs 返回 null
+     * APISIX 暂不支持 Agent API
      */
     @Test
-    void testFetchAgentAPIsReturnsNull() {
+    void testFetchAgentAPIsShouldThrowBusinessException() {
         ApisixOperator operator = new ApisixOperator();
 
-        assertNull(operator.fetchAgentAPIs(null, 1, 10));
+        assertThrows(com.alibaba.apiopenplatform.core.exception.BusinessException.class, () ->
+                operator.fetchAgentAPIs(null, 1, 10));
     }
 
     /**
