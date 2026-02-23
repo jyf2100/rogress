@@ -40,6 +40,7 @@ import com.alibaba.apiopenplatform.service.gateway.client.ApisixClient;
 import com.alibaba.apiopenplatform.service.gateway.model.ApisixConsumer;
 import com.alibaba.apiopenplatform.service.gateway.model.ApisixRoute;
 import com.alibaba.apiopenplatform.support.consumer.ConsumerAuthConfig;
+import com.alibaba.apiopenplatform.support.consumer.ApisixAuthConfig;
 import com.alibaba.apiopenplatform.support.enums.GatewayType;
 import com.alibaba.apiopenplatform.support.gateway.ApisixConfig;
 import com.alibaba.apiopenplatform.support.gateway.GatewayConfig;
@@ -48,7 +49,9 @@ import com.aliyun.sdk.service.apig20240327.models.HttpApiApiInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -408,17 +411,39 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
             throw new RuntimeException("Route not found: " + routeId);
         }
 
-        // 获取或创建插件配置
-        Map<String, Object> plugins = route.getPlugins();
-        if (plugins == null) {
-            plugins = new java.util.HashMap<>();
+        // 获取或创建插件配置（始终使用可变 Map，避免来自 JSON / Map.of 的不可变实现）
+        Map<String, Object> plugins = route.getPlugins() == null ?
+                new HashMap<>() : new HashMap<>(route.getPlugins());
+
+        // 1) 确保 key-auth 插件存在（用于 Consumer API Key 校验）
+        plugins.putIfAbsent("key-auth", new HashMap<>());
+
+        // 2) 配置 consumer-restriction 插件（whitelist by consumer_name），实现“订阅级授权”
+        @SuppressWarnings("unchecked")
+        Map<String, Object> restrictionConfig = plugins.get("consumer-restriction") instanceof Map ?
+                new HashMap<>((Map<String, Object>) plugins.get("consumer-restriction")) :
+                new HashMap<>();
+
+        restrictionConfig.put("type", "consumer_name");
+
+        Object whitelistObj = restrictionConfig.get("whitelist");
+        List<String> whitelist = new ArrayList<>();
+        if (whitelistObj instanceof List) {
+            for (Object item : (List<?>) whitelistObj) {
+                if (item != null) {
+                    whitelist.add(String.valueOf(item));
+                }
+            }
+        } else if (whitelistObj instanceof String) {
+            whitelist.add((String) whitelistObj);
         }
 
-        // 配置 key-auth 插件，允许指定 consumer 访问
-        // APISIX 通过在 Route 上配置 plugins 来控制访问
-        if (!plugins.containsKey("key-auth")) {
-            plugins.put("key-auth", new java.util.HashMap<>());
+        if (!whitelist.contains(consumerId)) {
+            whitelist.add(consumerId);
         }
+
+        restrictionConfig.put("whitelist", whitelist);
+        plugins.put("consumer-restriction", restrictionConfig);
 
         // 更新 Route
         route.setPlugins(plugins);
@@ -426,16 +451,67 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
 
         // 返回授权配置
         return ConsumerAuthConfig.builder()
+                .apisixAuthConfig(ApisixAuthConfig.builder().routeId(routeId).build())
                 .build();
     }
 
     @Override
     public void revokeConsumerAuthorization(Gateway gateway, String consumerId, ConsumerAuthConfig authConfig) {
-        // APISIX 的 Consumer 授权是通过 Route 插件配置实现的
-        // 撤销授权实际上是删除 Consumer 或修改 Route 配置
-        // 这里我们只记录日志，实际的授权管理由 APISIX 内部处理
-        log.info("Revoke consumer authorization for consumer: {} on gateway: {}",
-                consumerId, gateway.getGatewayId());
+        if (authConfig == null || authConfig.getApisixAuthConfig() == null) {
+            return;
+        }
+
+        String routeId = authConfig.getApisixAuthConfig().getRouteId();
+        if (routeId == null || routeId.isEmpty()) {
+            return;
+        }
+
+        ApisixClient client = getClient(gateway);
+        ApisixRoute route = client.getRoute(routeId);
+        if (route == null) {
+            return;
+        }
+
+        if (route.getPlugins() == null || !route.getPlugins().containsKey("consumer-restriction")) {
+            return;
+        }
+
+        Map<String, Object> plugins = new HashMap<>(route.getPlugins());
+
+        Object restrictionObj = plugins.get("consumer-restriction");
+        if (!(restrictionObj instanceof Map)) {
+            return;
+        }
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> restrictionConfig = new HashMap<>((Map<String, Object>) restrictionObj);
+
+        Object whitelistObj = restrictionConfig.get("whitelist");
+        if (!(whitelistObj instanceof List)) {
+            return;
+        }
+
+        List<String> whitelist = new ArrayList<>();
+        for (Object item : (List<?>) whitelistObj) {
+            if (item != null) {
+                whitelist.add(String.valueOf(item));
+            }
+        }
+
+        boolean removed = whitelist.removeIf(item -> item != null && item.equals(consumerId));
+        if (!removed) {
+            return;
+        }
+
+        if (whitelist.isEmpty()) {
+            plugins.remove("consumer-restriction");
+        } else {
+            restrictionConfig.put("whitelist", whitelist);
+            plugins.put("consumer-restriction", restrictionConfig);
+        }
+
+        route.setPlugins(plugins);
+        client.updateRoute(routeId, route);
     }
 
     @Override

@@ -22,27 +22,18 @@ package com.alibaba.apiopenplatform.support.consumer;
 import lombok.Builder;
 import lombok.Data;
 
+/**
+ * APISIX 授权配置
+ *
+ * 用于在取消订阅/删除 Consumer 时定位需要回收授权的资源。
+ */
 @Data
 @Builder
-public class ConsumerAuthConfig {
+public class ApisixAuthConfig {
 
     /**
-     * for APIG
+     * APISIX Route ID
      */
-    private APIGAuthConfig apigAuthConfig;
-
-    /**
-     * for APISIX
-     */
-    private ApisixAuthConfig apisixAuthConfig;
-
-    /**
-     * for Higress
-     */
-    private HigressAuthConfig higressAuthConfig;
-
-    /**
-     * for ADP AI Gateway
-     */
-    private AdpAIAuthConfig adpAIAuthConfig;
+    private String routeId;
 }
+
