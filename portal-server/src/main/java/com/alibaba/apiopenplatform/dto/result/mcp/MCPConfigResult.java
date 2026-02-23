@@ -76,9 +76,9 @@ public class MCPConfigResult {
 
         List<DomainResult> domains = this.mcpServerConfig.getDomains();
         for (DomainResult domain : domains) {
-            if (StringUtils.equals(domain.getDomain(), "<higress-gateway-ip>")) {
+            if (StringUtils.equalsAny(domain.getDomain(), "<higress-gateway-ip>", "<apisix-gateway-ip>")) {
                 if (gatewayIps.isEmpty()) {
-                    throw new BusinessException(ErrorCode.GATEWAY_ERROR, Resources.GATEWAY, "no available ip to replace <higress-gateway-ip>");
+                    throw new BusinessException(ErrorCode.GATEWAY_ERROR, Resources.GATEWAY, "no available ip to replace gateway ip placeholder");
                 }
                 String randomGatewayIp = gatewayIps.get(new Random().nextInt(gatewayIps.size()));
                 domain.setDomain(randomGatewayIp);

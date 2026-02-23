@@ -424,8 +424,15 @@ public class ApisixClient extends GatewayClient {
         try {
             ApisixConsumer consumer = getConsumer(username);
             return consumer != null;
+        } catch (HttpClientErrorException e) {
+            // Only treat 404 as "not exists". Other HTTP errors should propagate
+            // so upper layers can decide whether to retry or keep existing state.
+            if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
+                return false;
+            }
+            throw e;
         } catch (Exception e) {
-            return false;
+            throw e;
         }
     }
 

@@ -62,6 +62,25 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ApisixOperator extends GatewayOperator<ApisixClient> {
 
+    private static String normalizeRoutePathForPrefixMatch(String uri) {
+        if (uri == null) {
+            return null;
+        }
+
+        String path = uri.trim();
+        if (path.endsWith("/*")) {
+            path = path.substring(0, path.length() - 2);
+        } else if (path.endsWith("*")) {
+            path = path.substring(0, path.length() - 1);
+        }
+
+        if (path.endsWith("/") && path.length() > 1) {
+            path = path.substring(0, path.length() - 1);
+        }
+
+        return path;
+    }
+
     @Override
     public GatewayType getGatewayType() {
         return GatewayType.APISIX;
@@ -161,6 +180,8 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
             throw new RuntimeException("Route not found: " + refConfig.getRouteId());
         }
 
+        String normalizedPath = normalizeRoutePathForPrefixMatch(route.getUri());
+
         // 构建域信息
         List<DomainResult> domains = Collections.singletonList(
                 DomainResult.builder()
@@ -171,7 +192,7 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
 
         // 构建路由匹配信息
         HttpRouteResult.RouteMatchPath matchPath = HttpRouteResult.RouteMatchPath.builder()
-                .value(route.getUri())
+                .value(normalizedPath)
                 .type("PREFIX")
                 .build();
 
@@ -189,7 +210,7 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
         var result = new java.util.LinkedHashMap<String, Object>();
         result.put("apiId", route.getId());
         result.put("apiName", route.getName() != null ? route.getName() : route.getId());
-        result.put("uri", route.getUri());
+        result.put("uri", normalizedPath);
         result.put("methods", route.getMethods());
         result.put("enabled", route.isEnabled());
         result.put("routes", Collections.singletonList(httpRouteResult));
@@ -208,13 +229,15 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
             throw new RuntimeException("Route not found: " + refConfig.getRouteId());
         }
 
+        String normalizedPath = normalizeRoutePathForPrefixMatch(route.getUri());
+
         // 构建 MCP 配置结果
         MCPConfigResult result = new MCPConfigResult();
         result.setMcpServerName(refConfig.getMcpServerName());
 
         // MCP Server 配置
         MCPConfigResult.MCPServerConfig serverConfig = new MCPConfigResult.MCPServerConfig();
-        serverConfig.setPath(route.getUri());
+        serverConfig.setPath(normalizedPath);
         serverConfig.setDomains(Collections.singletonList(
                 DomainResult.builder()
                         .domain("<apisix-gateway-ip>")
@@ -258,6 +281,8 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
             throw new RuntimeException("Route not found: " + refConfig.getRouteId());
         }
 
+        String normalizedPath = normalizeRoutePathForPrefixMatch(route.getUri());
+
         // 构建域信息
         List<DomainResult> domains = Collections.singletonList(
                 DomainResult.builder()
@@ -268,7 +293,7 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
 
         // 构建路由匹配信息
         HttpRouteResult.RouteMatchPath matchPath = HttpRouteResult.RouteMatchPath.builder()
-                .value(route.getUri())
+                .value(normalizedPath)
                 .type("PREFIX")
                 .build();
 

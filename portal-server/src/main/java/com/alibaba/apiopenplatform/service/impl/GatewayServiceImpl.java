@@ -243,6 +243,8 @@ public class GatewayServiceImpl implements GatewayService, ApplicationContextAwa
         Object refConfig;
         if (gateway.getGatewayType().isHigress()) {
             refConfig = productRef.getHigressRefConfig();
+        } else if (gateway.getGatewayType().isApisix()) {
+            refConfig = productRef.getApisixRefConfig();
         } else if (gateway.getGatewayType().isAdpAIGateway()) {
             refConfig = productRef.getAdpAIGatewayRefConfig();
         } else if (gateway.getGatewayType().isApsaraGateway()) {
@@ -270,6 +272,7 @@ public class GatewayServiceImpl implements GatewayService, ApplicationContextAwa
                 .higressConfig(gateway.getHigressConfig())
                 .adpAIGatewayConfig(gateway.getAdpAIGatewayConfig())
                 .apsaraGatewayConfig(gateway.getApsaraGatewayConfig())
+                .apisixConfig(gateway.getApisixConfig())
                 .gateway(gateway)  // 添加Gateway实体引用
                 .build();
     }
