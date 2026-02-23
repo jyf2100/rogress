@@ -253,6 +253,7 @@ public class ApisixClient extends GatewayClient {
      * @return 创建的路由
      */
     public ApisixRoute createRoute(String routeId, ApisixRoute route) {
+        sanitizeRouteForWrite(route);
         execute(
                 "/routes/" + routeId,
                 HttpMethod.PUT,
@@ -271,6 +272,7 @@ public class ApisixClient extends GatewayClient {
      * @return 更新后的路由
      */
     public ApisixRoute updateRoute(String routeId, ApisixRoute route) {
+        sanitizeRouteForWrite(route);
         execute(
                 "/routes/" + routeId,
                 HttpMethod.PUT,
@@ -294,6 +296,16 @@ public class ApisixClient extends GatewayClient {
                 null,
                 Void.class
         );
+    }
+
+    private static void sanitizeRouteForWrite(ApisixRoute route) {
+        if (route == null) {
+            return;
+        }
+        // APISIX Admin API rejects some read-only properties on PUT.
+        // Keep payload minimal and rely on @JsonInclude(NON_NULL) in ApisixRoute.
+        route.setCreate_time(null);
+        route.setUpdate_time(null);
     }
 
     // ==================== Consumer 管理 API ====================

@@ -27,6 +27,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ApisixConsumerRestrictionAuthTest {
 
+    private static final String PLACEHOLDER_DENY_ALL = "__HIMARKET_DENY_ALL__";
+
     @Mock
     private ApisixClient client;
 
@@ -83,6 +85,7 @@ class ApisixConsumerRestrictionAuthTest {
         Object whitelistObj = restriction.get("whitelist");
         assertInstanceOf(List.class, whitelistObj);
         List<?> whitelist = (List<?>) whitelistObj;
+        assertTrue(whitelist.contains(PLACEHOLDER_DENY_ALL));
         assertTrue(whitelist.contains("consumer-1"));
 
         assertNotNull(authConfig.getApisixAuthConfig());
@@ -90,7 +93,7 @@ class ApisixConsumerRestrictionAuthTest {
     }
 
     @Test
-    void revokeConsumerAuthorizationShouldRemovePluginWhenWhitelistEmpty() {
+    void revokeConsumerAuthorizationShouldKeepPlaceholderWhenWhitelistEmpty() {
         ApisixRoute route = new ApisixRoute();
         route.setId("route-1");
         route.setUri("/api/*");
@@ -116,7 +119,17 @@ class ApisixConsumerRestrictionAuthTest {
         ApisixRoute updated = captor.getValue();
         assertNotNull(updated.getPlugins());
         assertTrue(updated.getPlugins().containsKey("key-auth"));
-        assertFalse(updated.getPlugins().containsKey("consumer-restriction"));
+        assertTrue(updated.getPlugins().containsKey("consumer-restriction"));
+
+        Object restrictionObj = updated.getPlugins().get("consumer-restriction");
+        assertInstanceOf(Map.class, restrictionObj);
+        Map<?, ?> restriction = (Map<?, ?>) restrictionObj;
+
+        Object whitelistObj = restriction.get("whitelist");
+        assertInstanceOf(List.class, whitelistObj);
+        List<?> whitelist = (List<?>) whitelistObj;
+        assertFalse(whitelist.contains("consumer-1"));
+        assertEquals(List.of(PLACEHOLDER_DENY_ALL), whitelist);
     }
 
     @Test
@@ -156,6 +169,6 @@ class ApisixConsumerRestrictionAuthTest {
         List<?> whitelist = (List<?>) whitelistObj;
         assertFalse(whitelist.contains("consumer-1"));
         assertTrue(whitelist.contains("consumer-2"));
+        assertTrue(whitelist.contains(PLACEHOLDER_DENY_ALL));
     }
 }
-

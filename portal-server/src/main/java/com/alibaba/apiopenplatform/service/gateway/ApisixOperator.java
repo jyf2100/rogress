@@ -65,6 +65,15 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ApisixOperator extends GatewayOperator<ApisixClient> {
 
+    private static final String KEY_AUTH_PLUGIN_KEY = "key-auth";
+    private static final String CONSUMER_RESTRICTION_PLUGIN_KEY = "consumer-restriction";
+    /**
+     * APISIX consumer-restriction 插件要求 whitelist/blacklist 至少 1 个元素。
+     * 这里放一个不可能由系统生成的 consumerId（系统生成的 consumerId 形如 consumer-<24hex>）
+     * 用于表达“deny all until at least one subscription is granted”。
+     */
+    private static final String CONSUMER_RESTRICTION_PLACEHOLDER_CONSUMER = "__HIMARKET_DENY_ALL__";
+
     private static String normalizeRoutePathForPrefixMatch(String uri) {
         if (uri == null) {
             return null;
@@ -416,12 +425,12 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
                 new HashMap<>() : new HashMap<>(route.getPlugins());
 
         // 1) 确保 key-auth 插件存在（用于 Consumer API Key 校验）
-        plugins.putIfAbsent("key-auth", new HashMap<>());
+        plugins.putIfAbsent(KEY_AUTH_PLUGIN_KEY, new HashMap<>());
 
         // 2) 配置 consumer-restriction 插件（whitelist by consumer_name），实现“订阅级授权”
         @SuppressWarnings("unchecked")
-        Map<String, Object> restrictionConfig = plugins.get("consumer-restriction") instanceof Map ?
-                new HashMap<>((Map<String, Object>) plugins.get("consumer-restriction")) :
+        Map<String, Object> restrictionConfig = plugins.get(CONSUMER_RESTRICTION_PLUGIN_KEY) instanceof Map ?
+                new HashMap<>((Map<String, Object>) plugins.get(CONSUMER_RESTRICTION_PLUGIN_KEY)) :
                 new HashMap<>();
 
         restrictionConfig.put("type", "consumer_name");
@@ -438,12 +447,15 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
             whitelist.add((String) whitelistObj);
         }
 
+        if (!whitelist.contains(CONSUMER_RESTRICTION_PLACEHOLDER_CONSUMER)) {
+            whitelist.add(CONSUMER_RESTRICTION_PLACEHOLDER_CONSUMER);
+        }
         if (!whitelist.contains(consumerId)) {
             whitelist.add(consumerId);
         }
 
         restrictionConfig.put("whitelist", whitelist);
-        plugins.put("consumer-restriction", restrictionConfig);
+        plugins.put(CONSUMER_RESTRICTION_PLUGIN_KEY, restrictionConfig);
 
         // 更新 Route
         route.setPlugins(plugins);
@@ -472,13 +484,13 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
             return;
         }
 
-        if (route.getPlugins() == null || !route.getPlugins().containsKey("consumer-restriction")) {
+        if (route.getPlugins() == null || !route.getPlugins().containsKey(CONSUMER_RESTRICTION_PLUGIN_KEY)) {
             return;
         }
 
         Map<String, Object> plugins = new HashMap<>(route.getPlugins());
 
-        Object restrictionObj = plugins.get("consumer-restriction");
+        Object restrictionObj = plugins.get(CONSUMER_RESTRICTION_PLUGIN_KEY);
         if (!(restrictionObj instanceof Map)) {
             return;
         }
@@ -487,15 +499,17 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
         Map<String, Object> restrictionConfig = new HashMap<>((Map<String, Object>) restrictionObj);
 
         Object whitelistObj = restrictionConfig.get("whitelist");
-        if (!(whitelistObj instanceof List)) {
-            return;
-        }
-
         List<String> whitelist = new ArrayList<>();
-        for (Object item : (List<?>) whitelistObj) {
-            if (item != null) {
-                whitelist.add(String.valueOf(item));
+        if (whitelistObj instanceof List) {
+            for (Object item : (List<?>) whitelistObj) {
+                if (item != null) {
+                    whitelist.add(String.valueOf(item));
+                }
             }
+        } else if (whitelistObj instanceof String) {
+            whitelist.add((String) whitelistObj);
+        } else {
+            return;
         }
 
         boolean removed = whitelist.removeIf(item -> item != null && item.equals(consumerId));
@@ -503,12 +517,16 @@ public class ApisixOperator extends GatewayOperator<ApisixClient> {
             return;
         }
 
+        // consumer-restriction whitelist 不能为空（schema minItems=1），否则 Route 更新会失败。
+        // 当最后一个真实 consumer 被移除时，用 placeholder 保持“deny all”语义。
         if (whitelist.isEmpty()) {
-            plugins.remove("consumer-restriction");
-        } else {
-            restrictionConfig.put("whitelist", whitelist);
-            plugins.put("consumer-restriction", restrictionConfig);
+            whitelist.add(CONSUMER_RESTRICTION_PLACEHOLDER_CONSUMER);
+        } else if (!whitelist.contains(CONSUMER_RESTRICTION_PLACEHOLDER_CONSUMER)) {
+            whitelist.add(CONSUMER_RESTRICTION_PLACEHOLDER_CONSUMER);
         }
+
+        restrictionConfig.put("whitelist", whitelist);
+        plugins.put(CONSUMER_RESTRICTION_PLUGIN_KEY, restrictionConfig);
 
         route.setPlugins(plugins);
         client.updateRoute(routeId, route);

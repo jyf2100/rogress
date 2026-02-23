@@ -23,7 +23,7 @@
 - 在 `revokeConsumerAuthorization()` 中：
   - 根据 `authConfig.apisixAuthConfig.routeId` 获取 Route
   - 从 `consumer-restriction.whitelist` 移除 `consumerId`
-  - 若 whitelist 为空则移除整个 `consumer-restriction` 插件
+  - APISIX schema 要求 whitelist `minItems=1`；当最后一个 consumer 被移除时，用一个 placeholder consumer 保持 `consumer-restriction` 有效且表达“deny all”
 
 **优点**：不引入额外 APISIX 资源（consumer group），实现简单、可解释、与 Higress 的“允许列表”语义一致。  
 **缺点**：whitelist 可能变长；并发更新同一 Route 仍可能有“最后写入覆盖”风险（后续可做 P2.2 优化）。
@@ -42,7 +42,7 @@
   - `key-auth`（存在即可）
   - `consumer-restriction.whitelist` 包含当前 `consumerId`
 - revoke 后：Route plugins 中该 `consumerId` 被移除；
-  - 若 whitelist 为空：移除 `consumer-restriction` 插件（避免空 whitelist 的“默认拒绝所有”风险）。
+  - 若移除后 whitelist 为空：whitelist 退化为 placeholder（保持 deny-all，同时满足 schema `minItems=1`）。
 - `portal-server` 相关单测通过。
 
 ## 任务清单（TDD）
@@ -66,5 +66,12 @@
 ```bash
 export JAVA_HOME=$(/usr/libexec/java_home -v 17)
 mvn test -pl portal-server -am -Dtest='ApisixConsumerRestrictionAuthTest' -Dsurefire.failIfNoSpecifiedTests=false
+
+# 可选：需要本地 APISIX
+# export APISIX_ADMIN_ENDPOINT=http://localhost:9180
+# export APISIX_ADMIN_KEY=...
+# export APISIX_PROXY_ENDPOINT=http://localhost:9080
+# mvn test -pl portal-server -am -Dtest=ApisixConsumerRestrictionIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false
+
 mvn test -pl portal-server
 ```
