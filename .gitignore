@@ -37,3 +37,8 @@ build/
 /front-auth-app
 
 package-lock.json
+
+# Local/dev artifacts
+.playwright-mcp/
+deploy/docker/.env
+deploy/docker/data/
